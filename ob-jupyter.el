@@ -45,6 +45,11 @@
 (require 'ffi)
 (require 'hmac-def)
 
+;; Constants
+
+(defconst ob-jupyter-delim "<IDS|MSG>"
+  "The special delimiter used in the Jupyter wire protocol.")
+
 ;; ZMQ ffi
 
 (define-ffi-library zmq "libzmq")
