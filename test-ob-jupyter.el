@@ -55,5 +55,30 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (string= (ob-jupyter-hmac-sha256 message-contents key)
                    expected-hash)))
 
+(ert-deftest-parametrize ob-jupyter-msg-auth
+  (key msg)
+  (("9c6bbbfb-6ad699d44a15189c4f3d3371"
+    '("kernel.7d6d6bc5-babd-4697-9d94-25698a4c86df.status"
+      "<IDS|MSG>"
+      "4b838daae4acb5c3a2e4d27ed4624275d097fb4cf5766f293233c5db1eec4052"
+      "{\"version\":\"5.2\",\"date\":\"2018-01-12T07:59:12.329556Z\",\"session\":\"4ab8f73f-19c578e1d7cf0679d3c998bf\",\"username\":\"trevor\",\"msg_type\":\"status\",\"msg_id\":\"051b8a6b-1057ed8c76b427271d469144\"}"
+      "{\"version\":\"5.2\",\"date\":\"2018-01-12T07:59:11.712205Z\",\"session\":\"de122a00-364186727422e49083ac6d69\",\"username\":\"trevor\",\"msg_type\":\"execute_request\",\"msg_id\":\"2ef76a8e-c1adec30345557ab489c4ca2\"}"
+      "{}"
+      "{\"execution_state\":\"idle\"}"))
+   ("any key" '("no hash" "<IDS|MSG>" ""
+                "header" "parent_header" "metadata" "content")))
+  (should (equal (ob-jupyter-authenticate-message key msg)
+                 msg)))
+
+(ert-deftest-parametrize ob-jupyter-msg-auth-error
+  (key msg)
+  (("malformed" "input")
+   ("malformed" '("input"))
+   ("malformed" '("input" "<IDS|MSG>"))
+   ("9c6bbbfb-6ad699d44a15189c4f3d3371"
+    '("fake-status" "<IDS|MSG>" "not-authenticated"
+      "header" "parent_header" "metadata" "content")))
+  (should-error (ob-jupyter-authenticate-message msg key)))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here

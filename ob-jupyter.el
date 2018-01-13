@@ -344,5 +344,22 @@ MSG is a list of elements of the message."
 
 ;; Mid level
 
+(defun ob-jupyter-authenticate-message (key msg)
+  "Error if MSG does not authenticate with and KEY.
+
+Returns MSG unchanged if it authenticates.
+
+Uses `ob-jupyter-hmac-sha256' to authenticate."
+  (let ((orig-msg msg)
+        hmac rest)
+    (while (and msg (not (string= ob-jupyter-delim (pop msg)))))
+    (setq hmac (pop msg)
+          rest (apply #'concat msg))
+    (unless (or (string= hmac "")
+                (string= hmac (ob-jupyter-hmac-sha256 rest key)))
+      (error (concat "Message failed to authenticate!\n"
+                     "  msg: %.70s") msg))
+    orig-msg))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
