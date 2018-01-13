@@ -322,5 +322,20 @@ Returns a list of the various parts."
 (advice-add 'ob-jupyter-hmac-sha256 :filter-return
             #'ob-jupyter-hash-to-string)
 
+;; Low level
+
+(defun ob-jupyter-recv-message (socket)
+  "Read a Jupyter protocol message from 0MQ SOCKET.
+
+Returns a list of elements of the message."
+  (let ((max-len 4096))
+    (zmq-receive-multi max-len socket)))
+
+(defun ob-jupyter-send-message (socket msg)
+  "Send Jupyter protocol MSG to 0MQ SOCKET.
+
+MSG is a list of elements of the message."
+  (zmq-send-multi msg socket))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
