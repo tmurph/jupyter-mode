@@ -43,6 +43,7 @@
 ;;; Code:
 
 (require 'ffi)
+(require 'hmac-def)
 
 ;; ZMQ ffi
 
@@ -292,6 +293,34 @@ Returns a list of the various parts."
       (zmq-getsockopt socket ZMQ-EVENTS zevents size)
       (setq events (ffi--mem-ref zevents :int)))
     (> (logand events ZMQ-POLLIN) 0)))
+
+;; Authentication
+
+(defun ob-jupyter-strings-to-unibyte (strings)
+  "Convert STRINGS to UTF8 unibyte strings."
+  (let (ret)
+    (dolist (s strings (nreverse ret))
+      (push (encode-coding-string s 'utf-8 t) ret))))
+
+(defun ob-jupyter-hash-to-string (bytestring)
+  "Convert BYTESTRING to ascii string of hex digits."
+  (let (ret)
+    (dolist (c (string-to-list bytestring)
+               (apply #'concat (nreverse ret)))
+      (push (format "%02x" c) ret))))
+
+(defun ob-jupyter-sha256 (object)
+  "Hash OBJECT with the sha256 algorithm."
+  (secure-hash 'sha256 object nil nil t))
+
+(define-hmac-function ob-jupyter-hmac-sha256
+  ob-jupyter-sha256 64 32)
+
+(advice-add 'ob-jupyter-hmac-sha256 :filter-args
+            #'ob-jupyter-strings-to-unibyte)
+
+(advice-add 'ob-jupyter-hmac-sha256 :filter-return
+            #'ob-jupyter-hash-to-string)
 
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
