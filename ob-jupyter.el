@@ -421,5 +421,25 @@ For additional details, see http://jupyter-client.readthedocs.io/en/latest/messa
                                          key)))
                (cdr (assq key alist))))))
 
+(defun ob-jupyter-signed-message-from-parts (key id-parts msg-parts)
+  "Create a signed Jupyter protocol message from KEY, ID-PARTS, and MSG-PARTS.
+
+ID-PARTS may be nil, a single string ident, or a list of string
+idents.  MSG-PARTS must be a list of four strings encoding JSON
+dictionaries as per the Jupyter protocol.
+
+If KEY is nil or the empty string, don't actually sign the
+message before returning."
+  (let (ret)
+    (if (stringp id-parts)
+        (push id-parts ret)
+      (dolist (elt id-parts) (push elt ret)))
+    (push ob-jupyter-delim ret)
+    (if (and key (not (string= key "")))
+        (push (ob-jupyter-hmac-sha256 (apply #'concat msg-parts) key) ret)
+      (push "" ret))
+    (dolist (elt msg-parts) (push elt ret))
+    (nreverse ret)))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here

@@ -130,5 +130,24 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       (content . "malformed"))))
   (should-error (ob-jupyter-validate-alist alist)))
 
+(ert-deftest-parametrize ob-jupyter-signed-msg
+  (key id-parts msg-parts expected-msg)
+  (("e66550e7-bb4ecf567ca2b22868d416e4"
+    nil
+    '("{\"version\":\"5.2\",\"date\":\"2018-01-13T10:58:08.126175Z\",\"session\":\"ac9fe695-c70d0e985b372c6c29abbcca\",\"username\":\"trevor\",\"msg_type\":\"kernel_info_request\",\"msg_id\":\"e1a8cb82-0c5c2e5de6db532cedad5fed\"}"
+      "{}" "{}" "{}")
+    '("<IDS|MSG>"
+      "024ec03acbcc106af23faf1afecadbf0b3180bd7df76230c94a52e42195fb54c"
+      "{\"version\":\"5.2\",\"date\":\"2018-01-13T10:58:08.126175Z\",\"session\":\"ac9fe695-c70d0e985b372c6c29abbcca\",\"username\":\"trevor\",\"msg_type\":\"kernel_info_request\",\"msg_id\":\"e1a8cb82-0c5c2e5de6db532cedad5fed\"}"
+      "{}" "{}" "{}"))
+   (nil "don't sign" '("header" "parent_header" "metadata" "contents")
+        '("don't sign"
+          "<IDS|MSG>"
+          ""
+          "header" "parent_header" "metadata" "contents")))
+  (should (equal
+           (ob-jupyter-signed-message-from-parts key id-parts msg-parts)
+           expected-msg)))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
