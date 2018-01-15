@@ -362,5 +362,64 @@ Uses `ob-jupyter-hmac-sha256' to authenticate."
                      "  msg: %.70s") msg))
     orig-msg))
 
+(defun ob-jupyter-validate-header-alist (alist)
+  "Error if ALIST is not a valid Jupyter protocol header section."
+  (let ((keys '(msg_id username session date msg_type version))
+        value)
+    (dolist (key keys)
+      (setq value (assq key alist))
+      (unless value
+        (error (concat "Header is missing a required key!\n"
+                       "  key: %s") key))
+      (unless (stringp (cdr value))
+        (error (concat "Header value is not a string!\n"
+                       "  key: %s\n"
+                       "  value: %s") key value)))))
+
+(defun ob-jupyter-validate-parent_header-alist (alist)
+  "Error if ALIST is not a valid Jupyter protocol parent_header section."
+  (when alist
+    (ob-jupyter-validate-header-alist alist)))
+
+(defun ob-jupyter-validate-metadata-alist (alist)
+  "Error if ALIST is not a valid Jupyter protocol metadata section."
+  (unless (json-encode-alist alist)
+    (error (concat "Metadata is not a valid alist!\n"
+                   "  meta: %.70s") alist)))
+
+(defun ob-jupyter-validate-content-alist (alist)
+  "Error if ALIST is not a valid Jupyter protocol content section."
+  (unless (json-encode-alist alist)
+    (error (concat "Content is not a valid alist!\n"
+                   "  content: %.70s") alist)))
+
+(defun ob-jupyter-validate-alist (alist)
+  "Error if ALIST is not a valid Jupyter protocol representation.
+
+Returns alist unchanged if it is valid.
+
+ALIST may include the following keys:
+ - ident (may be a list of IDs or just a single ID)
+
+ALIST must include the following nested key structure:
+ - header
+   - msg_id
+   - username
+   - session
+   - date
+   - msg_type
+   - version
+ - parent_header
+ - metadata
+ - content
+
+For additional details, see http://jupyter-client.readthedocs.io/en/latest/messaging.html#general-message-format"
+  (let ((keys '(header parent_header metadata content)))
+    (dolist (key keys alist)
+      (funcall (symbol-function (intern (format
+                                         "ob-jupyter-validate-%s-alist"
+                                         key)))
+               (cdr (assq key alist))))))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here

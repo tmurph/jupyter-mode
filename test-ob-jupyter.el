@@ -80,5 +80,55 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       "header" "parent_header" "metadata" "content")))
   (should-error (ob-jupyter-authenticate-message msg key)))
 
+(defun ob-jupyter-default-valid-header ()
+  "Return a sample valid header alist."
+  '((msg_id . "uuid")
+    (username . "me")
+    (session . "uuid")
+    (date . "now")
+    (msg_type . "type")
+    (version . "version")))
+
+(ert-deftest ob-jupyter-validate-msg ()
+  "Does `ob-jupyter-validate-msg' return successfully valid messages?"
+  (let ((valid-msg
+         `((header ,@(ob-jupyter-default-valid-header))
+           (parent_header)
+           (metadata)
+           (content))))
+    (should (equal (ob-jupyter-validate-alist valid-msg)
+                   valid-msg))))
+
+(ert-deftest-parametrize ob-jupyter-validate-msg-alist-error
+  (alist)
+  (("malformed_input")
+   ('((header)
+      (parent_header)
+      (metadata)
+      (content)))
+   ('((header
+       (msg_id ("malformed"))
+       (username)
+       (session)
+       (date)
+       (msg_type)
+       (version))
+      (parent_header)
+      (metadata)
+      (content)))
+   (`((header ,@(ob-jupyter-default-valid-header))
+      (parent_header . "malformed")
+      (metadata)
+      (content)))
+   (`((header ,@(ob-jupyter-default-valid-header))
+      (parent_header ,@(ob-jupyter-default-valid-header))
+      (metadata . "malformed")
+      (content)))
+   (`((header ,@(ob-jupyter-default-valid-header))
+      (parent_header)
+      (metadata (valid . "meta"))
+      (content . "malformed"))))
+  (should-error (ob-jupyter-validate-alist alist)))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
