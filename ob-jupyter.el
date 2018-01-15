@@ -337,5 +337,7 @@ Returns a list of elements of the message."
 MSG is a list of elements of the message."
   (zmq-send-multi msg socket))
 
+;; Mid level
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
