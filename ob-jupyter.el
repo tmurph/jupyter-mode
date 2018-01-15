@@ -441,5 +441,23 @@ message before returning."
     (dolist (elt msg-parts) (push elt ret))
     (nreverse ret)))
 
+(defun ob-jupyter-alist-from-message (msg)
+  "Convert Jupyter protocol MSG (in list-of-json-str form) to alist."
+  (let ((keys '(header parent_header metadata content))
+        key json-str ret)
+    (while (and msg (not (string= ob-jupyter-delim (pop msg)))))
+    (pop msg)                             ; discard hmac
+    (while (setq key (pop keys)
+                 json-str (pop msg))
+      (push (cons key (json-read-from-string json-str)) ret))
+    (nreverse ret)))
+
+(defun ob-jupyter-msg-parts-from-alist (alist)
+  "Convert Jupyter protocol ALIST to lists of json str."
+  (let ((keys '(header parent_header metadata content))
+        ret)
+    (dolist (key keys (nreverse ret))
+      (push (json-encode-alist (cdr (assq key alist))) ret))))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here

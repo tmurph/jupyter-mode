@@ -149,5 +149,64 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            (ob-jupyter-signed-message-from-parts key id-parts msg-parts)
            expected-msg)))
 
+(ert-deftest ob-jupyter-alist-from-msg-parse ()
+  "Does `ob-jupyter-alist-from-message' parse messages?"
+  (let ((msg
+         '("kernel.7d6d6bc5-babd-4697-9d94-25698a4c86df.status"
+           "<IDS|MSG>"
+           "4b838daae4acb5c3a2e4d27ed4624275d097fb4cf5766f293233c5db1eec4052"
+           "{\"version\":\"5.2\",\"date\":\"2018-01-12T07:59:12.329556Z\",\"session\":\"4ab8f73f-19c578e1d7cf0679d3c998bf\",\"username\":\"trevor\",\"msg_type\":\"status\",\"msg_id\":\"051b8a6b-1057ed8c76b427271d469144\"}"
+           "{\"version\":\"5.2\",\"date\":\"2018-01-12T07:59:11.712205Z\",\"session\":\"de122a00-364186727422e49083ac6d69\",\"username\":\"trevor\",\"msg_type\":\"execute_request\",\"msg_id\":\"2ef76a8e-c1adec30345557ab489c4ca2\"}"
+           "{}"
+           "{\"execution_state\":\"idle\"}"))
+        (expected-alist
+         '((header
+            (version . "5.2")
+            (date . "2018-01-12T07:59:12.329556Z")
+            (session . "4ab8f73f-19c578e1d7cf0679d3c998bf")
+            (username . "trevor")
+            (msg_type . "status")
+            (msg_id . "051b8a6b-1057ed8c76b427271d469144"))
+           (parent_header
+            (version . "5.2")
+            (date . "2018-01-12T07:59:11.712205Z")
+            (session . "de122a00-364186727422e49083ac6d69")
+            (username . "trevor")
+            (msg_type . "execute_request")
+            (msg_id . "2ef76a8e-c1adec30345557ab489c4ca2"))
+           (metadata)
+           (content
+            (execution_state . "idle")))))
+    (should (equal (ob-jupyter-alist-from-message msg)
+                   expected-alist))))
+
+(ert-deftest ob-jupyter-msg-from-alist-parse ()
+  "Does `ob-jupyter-msg-parts-from-alist' parse alists?"
+  (let ((alist
+         '((header
+            (version . "5.2")
+            (date . "2018-01-15T00:07:16.780954Z")
+            (session . "d21cef59-80ab-437c-a9c7-5b16c02b0ce5")
+            (username . "trevor")
+            (msg_type . "status")
+            (msg_id . "6d56a56b-4877-4d1d-897b-9ff60b940ebe"))
+           (parent_header
+            (version . "5.2")
+            (date . "2018-01-15T00:07:10.000000Z")
+            (session . "c6decad2-18b9-4935-a02e-a66b3c1b4cc4")
+            (username . "trevor")
+            (msg_type . "execute_request")
+            (msg_id . "fcf0b3fd-552d-4f47-b31c-ebf6ecd6a2cc"))
+           (metadata)
+           (content
+            (execution_state . "idle"))))
+        (expected-msg
+         '("{\"version\":\"5.2\",\"date\":\"2018-01-15T00:07:16.780954Z\",\"session\":\"d21cef59-80ab-437c-a9c7-5b16c02b0ce5\",\"username\":\"trevor\",\"msg_type\":\"status\",\"msg_id\":\"6d56a56b-4877-4d1d-897b-9ff60b940ebe\"}"
+           "{\"version\":\"5.2\",\"date\":\"2018-01-15T00:07:10.000000Z\",\"session\":\"c6decad2-18b9-4935-a02e-a66b3c1b4cc4\",\"username\":\"trevor\",\"msg_type\":\"execute_request\",\"msg_id\":\"fcf0b3fd-552d-4f47-b31c-ebf6ecd6a2cc\"}"
+           "{}"
+           "{\"execution_state\":\"idle\"}")))
+    (should (equal (ob-jupyter-msg-parts-from-alist alist)
+                   expected-msg))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
