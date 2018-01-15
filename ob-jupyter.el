@@ -44,6 +44,7 @@
 
 (require 'ffi)
 (require 'hmac-def)
+(require 'json)
 
 ;; Constants
 
