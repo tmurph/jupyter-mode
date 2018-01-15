@@ -51,6 +51,19 @@
 (defconst ob-jupyter-delim "<IDS|MSG>"
   "The special delimiter used in the Jupyter wire protocol.")
 
+(defconst ob-jupyter-protocol-version "5.2"
+  "Messaging protocol implemented in this library.
+
+The Jupyter message specification is versioned independently of
+the packages that use it, e.g. jupyter servers and clients.
+
+For full details see
+http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
+
+;; External functions
+
+(autoload 'org-id-uuid "org-id")
+
 ;; ZMQ ffi
 
 (define-ffi-library zmq "libzmq")
@@ -458,6 +471,67 @@ message before returning."
         ret)
     (dolist (key keys (nreverse ret))
       (push (json-encode-alist (cdr (assq key alist))) ret))))
+
+(defun ob-jupyter-default-header (msg_type &optional session)
+  "Create a Jupyter protocol header alist of type MSG_TYPE.
+
+If SESSION is provided, use that as the session value.
+Otherwise, generate a new session UUID."
+  `((msg_id . ,(org-id-uuid))
+    (username . ,(user-login-name))
+    (session . ,(or session (org-id-uuid)))
+    (date . ,(format-time-string "%FT%T.%6NZ" nil t))
+    (msg_type . ,msg_type)
+    (version . ,ob-jupyter-protocol-version)))
+
+(defun ob-jupyter-kernel-info-request-alist ()
+  "Return a Jupyter protocol request for kernel info."
+  `((header ,@(ob-jupyter-default-header "kernel_info_request"))
+    (parent_header)
+    (metadata)
+    (content)))
+
+(defun ob-jupyter-execute-request-alist (code)
+  "Return a Jupyter protocol request to execute CODE."
+  `((header ,@(ob-jupyter-default-header "execute_request"))
+    (parent_header)
+    (metadata)
+    (content
+     (code . ,code)
+     (silent . :json-false)
+     (store_history . t)
+     (user_expressions)
+     (allow_stdin . :json-false)
+     (stop_on_error . t))))
+
+(defun ob-jupyter-inspect-request-alist (pos code)
+  "Return a Jupyter protocol request to inspect the object at POS in CODE."
+  `((header ,@(ob-jupyter-default-header "inspect_request"))
+    (parent_header)
+    (metadata)
+    (content
+     (code . ,code)
+     (cursor_pos . ,pos)
+     (detail_level . 0))))
+
+(defun ob-jupyter-complete-request-alist (pos code)
+  "Return a Jupyter protocol request to complete the CODE at POS."
+  `((header ,@(ob-jupyter-default-header "complete_request"))
+    (parent_header)
+    (metadata)
+    (content
+     (code . ,code)
+     (cursor_pos . ,pos))))
+
+(defun ob-jupyter-shutdown-request-alist (&optional restart)
+  "Return a Jupyter protocol request to shut down the kernel.
+
+If RESTART, restart the kernel after the shutdown."
+  `((header ,@(ob-jupyter-default-header "shutdown_request"))
+    (parent_header)
+    (metadata)
+    (content
+     (restart . ,(if restart t :json-false)))))
 
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
