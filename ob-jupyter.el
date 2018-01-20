@@ -765,6 +765,35 @@ Returns a deferred object that can be chained with `deferred:$'."
                          (deferred:next self results)))
            :errorback (lambda () (nreverse results))))))))
 
+(defun ob-jupyter-roundtrip-deferred
+    (alist shell-socket io-socket &optional key timeout)
+  "Defer a Jupyter roundtrip request / reply pattern.
+
+When fired, send ALIST to SHELL-SOCKET and collect all messages
+sent back on SHELL-SOCKET and IO-SOCKET into an alist
+like ((shell shell-socket-list) (iopub io-socket-list)).
+
+If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
+
+If TIMEOUT is provided, stop receiving from a socket if any
+receive on that socket takes longer than TIMEOUT msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (deferred:new
+    (lambda ()
+      (deferred:$
+        (deferred:callback-post
+          (ob-jupyter-send-alist-deferred alist shell-socket key))
+        (deferred:parallel
+          `((shell . ,(deferred:callback-post
+                        (ob-jupyter-recv-all-deferred
+                         shell-socket
+                         #'ob-jupyter-shell-last-p key timeout)))
+            (iopub . ,(deferred:callback-post
+                        (ob-jupyter-recv-all-deferred
+                         io-socket
+                         #'ob-jupyter-iopub-last-p key timeout)))))))))
+
 ;; Debug
 
 (defvar ob-jupyter-deferred-result nil
