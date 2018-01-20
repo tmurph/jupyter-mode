@@ -657,5 +657,7 @@ If RESTART, restart the kernel after the shutdown."
     (content
      (restart . ,(if restart t :json-false)))))
 
+;; High level API
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
