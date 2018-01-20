@@ -1,0 +1,85 @@
+#+TITLE:	ob-jupyter.el
+#+AUTHOR:	Trevor Murphy
+#+EMAIL:	trevor.m.murphy@gmail.com
+
+~ob-jupyter.el~ aims to make Emacs into a fully-functional [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] client.
+
+It’s still very much a work-in-progress.
+
+* Quickstart
+
+** Ensure you have Jupyter installed
+Just use [[https://pip.pypa.io/en/stable/][pip]]!
+
+#+BEGIN_SRC shell
+  pip install jupyter
+#+END_SRC
+
+** Add emacs-ffi to your load-path
+I’m still learning Cask, so for right now this step is still manual.
+
+#+BEGIN_SRC shell
+  git clone https://github.com/tromey/emacs-ffi.git
+  cd emacs-ffi
+  # you may need to tweak Makefile variables to suit your setup
+  make
+  cp ffi.el ffi-module.so /path/to/your/site/lisp
+#+END_SRC
+
+** Load ob-jupyter
+
+#+BEGIN_SRC emacs-lisp
+  (require 'ob-jupyter)
+#+END_SRC
+
+** Play in IELM
+Say =M-x ielm= to get to an interactive emacs lisp repl.  Try the following!
+
+#+BEGIN_SRC emacs-lisp
+  ELISP> (setq kernel-struct (ob-jupyter-initialize-kernel "python" "test"))
+  ;; => [cl-struct-ob-jupyter-struct ... ]
+#+END_SRC
+
+As a side effect, this creates a =*Jupyter:test*= comint buffer and connects
+to an inferior Jupyter console process.  But ignore that buffer for now.
+
+#+BEGIN_SRC emacs-lisp
+  ELISP> (let ((alist (ob-jupyter-kernel-info-request-alist))
+               (shell (ob-jupyter-struct-shell kernel-struct))
+               (iopub (ob-jupyter-struct-iopub kernel-struct))
+               (key (ob-jupyter-struct-key kernel-struct))
+               (timeout-msec 1000))
+           (deferred:sync!
+             (ob-jupyter-roundtrip-deferred
+              alist shell iopub key timeout-msec)))
+  ;; => ((shell
+  ;;      ((header ...)
+  ;;       (parent_header ...)
+  ;;       (metadata ...)
+  ;;       (content ...)))
+  ;;     (iopub
+  ;;      ((header ...)
+  ;;       (parent_header ...)
+  ;;       (metadata ...)
+  ;;       (content ...)))
+  ;;      ((header ...)
+  ;;       ...)))
+#+END_SRC
+
+Compare the output with Jupyter’s [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#general-message-format][general message format]], then dive into the format of messages on the [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-shell-router-dealer-channel][shell channel]] and the [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-iopub-pub-sub-channel][iopub channel]].
+
+The following message factories are available:
+- ~ob-jupyter-kernel-info-request-alist~
+- ~ob-jupyter-execute-request-alist~
+- ~ob-jupyter-inspect-request-alist~
+- ~ob-jupyter-complete-request-alist~
+- ~ob-jupyter-shutdown-request-alist~
+
+Once you execute code from the IELM repl, flip to the comint buffer and check to see that it had the expected side effects.
+
+* TODO Next Steps
+So much …
+- [ ] actually connect roundtrip communication routines to Org Babel!
+- [ ] implement company completion with asynchronous completion requests
+- [ ] write more tests!
+- [ ] use kernel-info-request to determine the appropriate major mode for the inferior comint buffer
