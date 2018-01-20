@@ -700,5 +700,18 @@ Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (lambda () (ob-jupyter-recv-alist-sync socket key))))
 
+;; Debug
+
+(defvar ob-jupyter-deferred-result nil
+  "A place to store the last async result.
+
+Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
+
+(defun ob-jupyter-sync-deferred (d)
+  "Fire deferred object D and save the result to `ob-jupyter-deferred-result'."
+  (deferred:watch d
+    (lambda (reply) (setq ob-jupyter-deferred-result reply)))
+  (deferred:callback d))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
