@@ -65,6 +65,28 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
 (autoload 'org-id-uuid "org-id")
 
+;; Customize
+
+(defgroup ob-jupyter nil
+  "Settings for Org Babel Jupyter code execution."
+  :prefix "ob-jupyter-"
+  :group 'org-babel)
+
+(defcustom ob-jupyter-runtime-dir "~/Library/Jupyter/runtime"
+  "The directory to look for runtime connection files."
+  :type 'string
+  :group 'ob-jupyter)
+
+(defcustom ob-jupyter-interpreter "jupyter-console"
+  "Command to start the interactive interpreter."
+  :type 'string
+  :group 'ob-jupyter)
+
+(defcustom ob-jupyter-interpreter-args '("--simple-prompt")
+  "Default arguments for the interactive interpreter."
+  :type '(repeat string)
+  :group 'ob-jupyter)
+
 ;; ZMQ ffi
 
 (define-ffi-library zmq "libzmq")
@@ -341,6 +363,107 @@ Returns a list of the various parts."
 
 (advice-add 'ob-jupyter-hmac-sha256 :filter-return
             #'ob-jupyter-hash-to-string)
+
+;; Process Management
+
+(cl-defstruct (ob-jupyter-struct
+               (:constructor ob-jupyter-struct-create)
+               (:copier ob-jupyter-struct-copy))
+  "Jupyter kernel management object.
+
+`ob-jupyter-struct-name' The name used to identify this struct.
+
+`ob-jupyter-struct-process' The Jupyter process started by Emacs.
+
+`ob-jupyter-struct-buffer' The comint REPL buffer.
+
+`ob-jupyter-struct-conn-file-name'
+
+`ob-jupyter-struct-iopub' A ZMQ socket object connected to the
+  Jupyter IOPub port.
+
+`ob-jupyter-struct-shell' A ZMQ socket object connected to the
+Jupyter Shell port.
+
+`ob-jupyter-struct-context' A ZMQ context object to manage the sockets.
+
+`ob-jupyter-struct-key' The HMAC-SHA256 key used to authenticate
+to the Jupyter server."
+  (name nil :read-only t)
+  (process nil :read-only t)
+  (buffer nil :read-only t)
+  (conn-file-name nil :read-only t)
+  (iopub nil :read-only t)
+  (shell nil :read-only t)
+  (context nil :read-only t)
+  (key nil :read-only t))
+
+(defun ob-jupyter-initialize-kernel
+    (kernel name &optional cmd-args kernel-args)
+  "Start a Jupyter KERNEL and associate a comint repl.
+
+If KERNEL is nil, just use the Jupyter default (python).
+
+The process name, comint buffer name, and Jupyter connection file
+name will all derive from NAME.
+
+If provided, the CMD-ARGS and KERNEL-ARGS (which must be lists) will
+be passed to `ob-jupyter-interpreter' like so:
+
+$ `ob-jupyter-interpreter' `ob-jupyter-interpreter-args'
+  -f derived-connection-file
+  CMD-ARGS --kernel KERNEL KERNEL-ARGS
+
+Returns an `ob-jupyter-struct'."
+  (let* ((proc-name (format "*ob-jupyter-%s*" name))
+         (proc-buffer-name (format "*Jupyter:%s*" name))
+         (conn-file (format "emacs-%s.json" name))
+         (full-file (expand-file-name conn-file ob-jupyter-runtime-dir))
+         (full-args (-flatten
+                     (list ob-jupyter-interpreter-args
+                           "-f" conn-file cmd-args
+                           (and kernel '("--kernel" kernel))
+                           kernel-args)))
+         proc-buf json ctx iopub shell)
+    ;; this creates the conn-file in `ob-jupyter-runtime-dir'
+    (setq proc-buf (apply #'make-comint-in-buffer proc-name
+                          proc-buffer-name ob-jupyter-interpreter
+                          nil full-args))
+    (while (not (file-exists-p full-file)) (sit-for 0.001))
+    ;; so we can read the file here
+    (setq json (json-read-file full-file)
+          ctx (zmq-ctx-new)
+          shell (zmq-socket ctx ZMQ-DEALER)
+          iopub (zmq-socket ctx ZMQ-SUB))
+    (with-ffi-strings ((s (format "%s://%s:%s"
+                                  (cdr (assq 'transport json))
+                                  (cdr (assq 'ip json))
+                                  (cdr (assq 'shell_port json))))
+                       (i (format "%s://%s:%s"
+                                  (cdr (assq 'transport json))
+                                  (cdr (assq 'ip json))
+                                  (cdr (assq 'iopub_port json))))
+                       (z ""))
+      (zmq-connect shell s)
+      (zmq-connect iopub i)
+      (zmq-setsockopt iopub ZMQ-SUBSCRIBE z 0))
+    (ob-jupyter-struct-create :name name
+                              :process (get-buffer-process proc-buf)
+                              :buffer proc-buf
+                              :conn-file-name conn-file
+                              :iopub iopub
+                              :shell shell
+                              :context ctx
+                              :key (cdr (assq 'key json)))))
+
+(defun ob-jupyter-finalize-kernel (struct)
+  "Forcibly stop the kernel in STRUCT and clean up associated ZMQ objects."
+  (let ((proc (ob-jupyter-struct-process struct)))
+    (if (process-live-p proc)
+        (kill-process proc)))
+  (zmq-close (ob-jupyter-struct-iopub struct))
+  (zmq-close (ob-jupyter-struct-shell struct))
+  (zmq-ctx-destroy (ob-jupyter-struct-context struct)))
 
 ;; Low level
 
