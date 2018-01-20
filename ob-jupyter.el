@@ -88,6 +88,13 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
   :type '(repeat string)
   :group 'ob-jupyter)
 
+(defcustom ob-jupyter-poll-msec 1
+  "The wait time (in msec) between polls to Jupyter sockets.
+
+A shorter wait time increases Emacs CPU load."
+  :type 'integer
+  :group 'ob-jupyter)
+
 ;; ZMQ ffi
 
 (define-ffi-library zmq "libzmq")
@@ -481,6 +488,20 @@ Returns a list of elements of the message."
 MSG is a list of elements of the message."
   (zmq-send-multi msg socket))
 
+(defun ob-jupyter-poll-deferred (socket &optional timeout)
+  "Defer polling SOCKET until a reply is ready.
+
+If TIMEOUT is not nil, will time out after TIMEOUT msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (deferred:new
+    (deferred:lambda (elapsed)
+      (cond
+       ((zmq-check-for-receive socket) t)
+       ((and timeout elapsed (> elapsed timeout))
+        (error "Socket poll timed out"))
+       (t (deferred:next self (+ (or elapsed 0) ob-jupyter-poll-msec)))))))
+
 ;; Mid level
 
 (defun ob-jupyter-authenticate-message (key msg)
@@ -658,6 +679,22 @@ If RESTART, restart the kernel after the shutdown."
     (content
      (restart . ,(if restart t :json-false)))))
 
+(defun ob-jupyter-iopub-last-p (alist)
+  "Return t if ALIST is the last expected message on the IOPub channel."
+  (->> alist
+       (assq 'content)
+       (assq 'execution_state)
+       cdr
+       (string= "idle")))
+
+(defun ob-jupyter-shell-last-p (alist)
+  "Return t if ALIST is the last expected message on the Shell channel."
+  (->> alist
+       (assq 'header)
+       (assq 'msg_type)
+       cdr
+       (string-match-p "reply\\'")))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)
@@ -699,6 +736,34 @@ If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
 Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (lambda () (ob-jupyter-recv-alist-sync socket key))))
+
+(defun ob-jupyter-recv-all-deferred (socket last-p &optional key timeout)
+  "Defer receiving a list of Jupyter reply alists from SOCKET.
+
+Loops until (funcall LAST-P alist) is not nil.
+
+If TIMEOUT is provided, terminate early if any receive takes
+longer than TIMEOUT msec.
+
+If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (deferred:new
+    (deferred:lambda (results)
+      (deferred:$
+        (deferred:callback-post
+          (ob-jupyter-poll-deferred socket timeout))
+        (deferred:set-next it
+          (ob-jupyter-recv-alist-deferred socket key))
+        (deferred:nextc it
+          (lambda (alist) (push alist results) alist))
+        (deferred:set-next it
+          (make-deferred
+           :callback (lambda (alist)
+                       (if (funcall last-p alist)
+                           (nreverse results)
+                         (deferred:next self results)))
+           :errorback (lambda () (nreverse results))))))))
 
 ;; Debug
 
