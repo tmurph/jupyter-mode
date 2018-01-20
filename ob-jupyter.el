@@ -659,5 +659,27 @@ If RESTART, restart the kernel after the shutdown."
 
 ;; High level API
 
+(defun ob-jupyter-send-alist-sync (alist socket &optional key)
+  "Send Jupyter request ALIST to SOCKET.
+
+If KEY is provided, sign messages with HMAC-SHA256 and KEY.
+
+Block until the send completes."
+  (->> alist
+       (ob-jupyter-validate-alist)
+       (ob-jupyter-msg-parts-from-alist)
+       (ob-jupyter-signed-message-from-parts key nil)
+       (ob-jupyter-send-message socket)))
+
+(defun ob-jupyter-recv-alist-sync (socket &optional key)
+  "Receive a Jupyter reply alist from SOCKET.
+
+If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
+
+Block until the receive completes."
+  (->> (ob-jupyter-recv-message socket)
+       (ob-jupyter-authenticate-message key)
+       (ob-jupyter-alist-from-message)))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
