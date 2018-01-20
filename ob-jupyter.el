@@ -682,5 +682,23 @@ Block until the receive completes."
        (ob-jupyter-authenticate-message key)
        (ob-jupyter-alist-from-message)))
 
+(defun ob-jupyter-send-alist-deferred (alist socket &optional key)
+  "Defer sending a Jupyter request ALIST to SOCKET.
+
+If KEY is provided, sign messages with HMAC-SHA256 and KEY.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (deferred:new
+    (lambda () (ob-jupyter-send-alist-sync alist socket key))))
+
+(defun ob-jupyter-recv-alist-deferred (socket &optional key)
+  "Defer receiving a Jupyter reply alist from SOCKET.
+
+If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (deferred:new
+    (lambda () (ob-jupyter-recv-alist-sync socket key))))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
