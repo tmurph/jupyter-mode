@@ -5,7 +5,7 @@
 ;; Version: 0.1.0
 ;; Keywords: literate programming, reproducible research
 ;; URL: https://github.com/tmurph/ob-jupyter
-;; Package-Requires: (emacs-ffi)
+;; Package-Requires: (dash emacs-ffi)
 
 ;; This file is not part of GNU Emacs.
 
@@ -45,6 +45,7 @@
 (require 'ffi)
 (require 'hmac-def)
 (require 'json)
+(require 'dash)
 
 ;; Constants
 
