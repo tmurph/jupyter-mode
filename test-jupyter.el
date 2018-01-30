@@ -428,24 +428,24 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                    expected-lst))))
 
 (ert-deftest ob-jupyter-babel-output ()
-  "Does `ob-jupyter-babel-output' parse execute reply alists?"
+  "Does `ob-jupyter--babel-output' parse execute reply alists?"
   (let ((alist '((iopub
                   ((header (msg_type . "stream"))
                    (content
                     (name . "stdout")
                     (text . "contents"))))))
         (expected "contents"))
-    (should (equal (ob-jupyter-babel-output alist) expected))))
+    (should (equal (ob-jupyter--babel-output alist) expected))))
 
 (ert-deftest ob-jupyter-babel-value ()
-  "Does `ob-jupyter-babel-value' parse execute reply alists?"
+  "Does `ob-jupyter--babel-value' parse execute reply alists?"
   (let ((alist '((iopub
                   ((header (msg_type . "execute_result"))
                    (content
                     (data
                      (text/plain . "minimal example")))))))
         (expected "minimal example"))
-    (should (equal (ob-jupyter-babel-value alist) expected))))
+    (should (equal (ob-jupyter--babel-value alist) expected))))
 
 (ert-deftest-parametrize ob-jupyter-babel-value-to-table
   (alist rownames colnames expected-table)
@@ -520,7 +520,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       ("samus" "neutral-a" "17")
       ("samus" "f-tilt" "31")
       ("samus" "d-tilt" "39"))))
-  (should (equal (ob-jupyter-babel-value-to-table alist rownames colnames)
+  (should (equal (ob-jupyter--babel-value-to-table alist rownames colnames)
                  expected-table)))
 
 (ert-deftest-parametrize ob-jupyter-babel-value-to-file
@@ -559,7 +559,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (lambda (prefix) (concat prefix "random")))
             ((symbol-function 'base64-decode-string) #'ignore-errors)
             ((symbol-function 'write-region) #'ignore))
-    (should (equal (ob-jupyter-babel-value-to-file
+    (should (equal (ob-jupyter--babel-value-to-file
                     alist file-name output-dir file-ext)
                    expected-name))))
 

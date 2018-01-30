@@ -1174,7 +1174,7 @@ IGNORED is not used."
 
 ;; Babel
 
-(defun ob-jupyter-babel-output (execute-reply-alist)
+(defun ob-jupyter--babel-output (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'output.
 
 Currently this returns the contents of the \"stdout\" stream."
@@ -1183,14 +1183,14 @@ Currently this returns the contents of the \"stdout\" stream."
        (assoc 'text)                    ; assume it's all stdout
        (cdr)))
 
-(defun ob-jupyter-babel-value (execute-reply-alist)
+(defun ob-jupyter--babel-value (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'value."
   (->> execute-reply-alist
        (jupyter--execute-result)
        (assoc 'text/plain)
        (cdr)))
 
-(defun ob-jupyter-babel-value-to-table
+(defun ob-jupyter--babel-value-to-table
     (execute-reply-alist &optional rownames colnames)
   "Process the Jupyter EXECUTE-REPLY-ALIST and return a list-of-lists.
 
@@ -1223,7 +1223,7 @@ Process first column of data according to ROWNAMES:
       (push (funcall row-fn row) results))
     (nreverse results)))
 
-(defun ob-jupyter-babel-value-to-file
+(defun ob-jupyter--babel-value-to-file
     (execute-reply-alist &optional file-name output-dir file-ext)
   "Process the Jupyter EXECUTE-REPLY-ALIST and return a filename.
 
@@ -1270,7 +1270,7 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
           (write-region nil nil file-name)))))
     file-name))
 
-(defun ob-jupyter-babel-extract-fn (params)
+(defun ob-jupyter--babel-extract-fn (params)
   "Return the appropriate function to compute results according to Babel PARAMS."
   (let* ((result-type (cdr (assq :result-type params)))
          (result-params (cdr (assq :result-params params)))
@@ -1281,15 +1281,15 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
          (file-ext (cdr (assq :file-ext params))))
     (cond
      ((eq result-type 'output)
-      #'ob-jupyter-babel-output)
+      #'ob-jupyter--babel-output)
      ((or (member "table" result-params) (member "vector" result-params))
       (lambda (alist)
-        (ob-jupyter-babel-value-to-table alist rownames colnames)))
+        (ob-jupyter--babel-value-to-table alist rownames colnames)))
      ((member "file" result-params)
       (lambda (alist)
-        (ob-jupyter-babel-value-to-file alist file output-dir file-ext)))
+        (ob-jupyter--babel-value-to-file alist file output-dir file-ext)))
      (t
-      #'ob-jupyter-babel-value))))
+      #'ob-jupyter--babel-value))))
 
 (defvar org-babel-default-header-args:jupyter
   '((:colnames . "yes")
@@ -1362,7 +1362,7 @@ PARAMS are the Org Babel parameters associated with the block."
          (var-lines (org-babel-variable-assignments:jupyter params))
          (code (org-babel-expand-body:jupyter body params var-lines))
          (result-params (cdr (assq :result-params params)))
-         (extract-fn (ob-jupyter-babel-extract-fn params))
+         (extract-fn (ob-jupyter--babel-extract-fn params))
          (src-buf (current-buffer))
          (src-point (point)))
     (if (not kernel)
@@ -1406,17 +1406,17 @@ a :kernel parameter, that will be passed to
         (deferred:nextc it #'jupyter--implementation)
         (deferred:nextc it
           (lambda (interpreter)
-            (ob-jupyter-setup-inferior
+            (ob-jupyter--setup-inferior
              interpreter (jupyter-struct-buffer kernel))))))
     (jupyter-struct-buffer kernel)))
 
-(defun ob-jupyter-setup-inferior (interp inf-buffer)
+(defun ob-jupyter--setup-inferior (interp inf-buffer)
   "Set up the appropriate major mode in INF-BUFFER according to INTERP."
   (cond
    ((string= interp "ipython")
-    (ob-jupyter-setup-inferior-ipython inf-buffer))))
+    (ob-jupyter--setup-inferior-ipython inf-buffer))))
 
-(defun ob-jupyter-cleanup-session (session)
+(defun ob-jupyter--cleanup-session (session)
   "Remove SESSION from internal alists and finalize the kernel."
   (let ((kernel (cdr (assoc session jupyter--session-kernels-alist))))
     (setq jupyter--session-kernels-alist
@@ -1430,7 +1430,7 @@ a :kernel parameter, that will be passed to
 
 ;; Python specific
 
-(defun ob-jupyter-python-edit-prep (babel-info)
+(defun ob-jupyter--python-edit-prep (babel-info)
   "Set up Python source buffers.
 
 Currently, this just sets `python-shell-buffer-name' to the
@@ -1443,9 +1443,9 @@ kernel buffer associated with :session in BABEL-INFO."
            (org-babel-jupyter-initiate-session session params))))))
 
 (add-hook 'ob-jupyter-python-edit-prep-hook
-          #'ob-jupyter-python-edit-prep)
+          #'ob-jupyter--python-edit-prep)
 
-(defun ob-jupyter-setup-inferior-ipython (inf-buffer)
+(defun ob-jupyter--setup-inferior-ipython (inf-buffer)
   "Set up inferior IPython mode in INF-BUFFER."
   (let ((python-shell--interpreter "ipython")
         (python-shell--interpreter-args
