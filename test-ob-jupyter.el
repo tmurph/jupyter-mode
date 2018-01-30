@@ -335,5 +335,18 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                     (image/png . "maybe here"))))
     (should (equal (ob-jupyter-display-data alist) expected))))
 
+(ert-deftest ob-jupyter-error ()
+  "Does `ob-jupyter-error' parse execution reply alists?"
+  (let ((alist '((iopub
+                  ((header (msg_type . "error"))
+                   (content
+                    (traceback . ["tb lines"])
+                    (ename . "name")
+                    (evalue . "value"))))))
+        (expected '((traceback . ["tb lines"])
+                    (ename . "name")
+                    (evalue . "value"))))
+    (should (equal (ob-jupyter-error alist) expected))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here

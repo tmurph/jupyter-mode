@@ -778,6 +778,15 @@ Returns an alist of mimetypes and contents, so like:
        (assoc 'data)
        (cdr)))
 
+(defun ob-jupyter-error (execute-reply-alist)
+  "Extract the IOPub \"error\" data from EXECUTE-REPLY-ALIST.
+
+Returns an alist like:
+ \((traceback . [\"error tb line 1\" \"error tb line 2\"])
+  \(ename . \"error name\")
+  \(evalue . \"error value\"))"
+  (cdr (ob-jupyter-iopub-content-from-alist "error" execute-reply-alist)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)
