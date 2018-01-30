@@ -122,32 +122,32 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
 ;; Customize
 
-(defgroup ob-jupyter nil
-  "Settings for Org Babel Jupyter code execution."
-  :prefix "ob-jupyter-"
-  :group 'org-babel)
+(defgroup jupyter nil
+  "Settings for Jupyter kernel interaction."
+  :prefix "jupyter-"
+  :group 'languages)
 
-(defcustom ob-jupyter-runtime-dir "~/Library/Jupyter/runtime"
+(defcustom jupyter-runtime-dir "~/Library/Jupyter/runtime"
   "The directory to look for runtime connection files."
   :type 'string
-  :group 'ob-jupyter)
+  :group 'jupyter)
 
-(defcustom ob-jupyter-command "jupyter-console"
+(defcustom jupyter-command "jupyter-console"
   "Command to start the interactive interpreter."
   :type 'string
-  :group 'ob-jupyter)
+  :group 'jupyter)
 
-(defcustom ob-jupyter-command-args '("--simple-prompt")
+(defcustom jupyter-command-args '("--simple-prompt")
   "Default arguments for the interactive interpreter."
   :type '(repeat string)
-  :group 'ob-jupyter)
+  :group 'jupyter)
 
-(defcustom ob-jupyter-poll-msec 5
+(defcustom jupyter-poll-msec 5
   "The wait time (in msec) between polls to Jupyter sockets.
 
 A shorter wait time increases Emacs CPU load."
   :type 'integer
-  :group 'ob-jupyter)
+  :group 'jupyter)
 
 ;; ZMQ ffi
 
@@ -470,9 +470,9 @@ The process name, comint buffer name, and Jupyter connection file
 name will all derive from NAME.
 
 If provided, the CMD-ARGS and KERNEL-ARGS (which must be lists) will
-be passed to `ob-jupyter-command' like so:
+be passed to `jupyter-command' like so:
 
-$ `ob-jupyter-command' `ob-jupyter-command-args'
+$ `jupyter-command' `jupyter-command-args'
   -f derived-connection-file
   CMD-ARGS --kernel KERNEL KERNEL-ARGS
 
@@ -480,16 +480,16 @@ Returns an `ob-jupyter-struct'."
   (let* ((proc-name (format "*ob-jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
          (conn-file (format "emacs-%s.json" name))
-         (full-file (expand-file-name conn-file ob-jupyter-runtime-dir))
+         (full-file (expand-file-name conn-file jupyter-runtime-dir))
          (full-args (-flatten
-                     (list ob-jupyter-command-args
+                     (list jupyter-command-args
                            "-f" conn-file cmd-args
                            (and kernel '("--kernel" kernel))
                            kernel-args)))
          proc-buf json ctx iopub shell)
-    ;; this creates the conn-file in `ob-jupyter-runtime-dir'
+    ;; this creates the conn-file in `jupyter-runtime-dir'
     (setq proc-buf (apply #'make-comint-in-buffer proc-name
-                          proc-buffer-name ob-jupyter-command
+                          proc-buffer-name jupyter-command
                           nil full-args))
     (while (not (file-exists-p full-file)) (sleep-for 0 5))
     ;; so we can read the file here
@@ -555,7 +555,7 @@ Returns a deferred object that can be chained with `deferred:$'."
        ((zmq-check-for-receive socket) t)
        ((and timeout elapsed (> elapsed timeout))
         (error "Socket poll timed out"))
-       (t (deferred:next self (+ (or elapsed 0) ob-jupyter-poll-msec)))))))
+       (t (deferred:next self (+ (or elapsed 0) jupyter-poll-msec)))))))
 
 ;; Mid level
 
@@ -1449,7 +1449,7 @@ kernel buffer associated with :session in BABEL-INFO."
   "Set up inferior IPython mode in INF-BUFFER."
   (let ((python-shell--interpreter "ipython")
         (python-shell--interpreter-args
-         (mapconcat #'identity (cons "-i" ob-jupyter-command-args) " ")))
+         (mapconcat #'identity (cons "-i" jupyter-command-args) " ")))
     (with-current-buffer inf-buffer
       (inferior-python-mode))))
 
