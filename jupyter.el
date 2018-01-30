@@ -152,63 +152,63 @@ A shorter wait time increases Emacs CPU load."
 
 (define-ffi-library zmq "libzmq")
 
-(define-ffi-function zmq-errno "zmq_errno"
+(define-ffi-function zmq--errno "zmq_errno"
   (:int "the C errno")
   nil zmq
   "retrieve the C errno as known to the 0MQ thread.
 http://api.zeromq.org/4-2:zmq-errno")
 
-(define-ffi-function zmq-strerror "zmq_strerror"
+(define-ffi-function zmq--strerror "zmq_strerror"
   (:pointer "Error message string")
   ((:int errnum "The C errno"))
   zmq
   "the error message string corresponding to the specified error number
 http://api.zeromq.org/4-2:zmq-strerror")
 
-(define-ffi-function zmq-ctx-new "zmq_ctx_new"
+(define-ffi-function zmq--ctx-new "zmq_ctx_new"
   (:pointer "Pointer to a context")
   nil zmq
   "create new ØMQ context.
 http://api.zeromq.org/4-2:zmq-ctx-new")
 
-(define-ffi-function zmq-ctx-destroy "zmq_ctx_destroy"
+(define-ffi-function zmq--ctx-destroy "zmq_ctx_destroy"
   (:int "status")
   ((:pointer *context)) zmq
   "terminate a ØMQ context.
 http://api.zeromq.org/4-2:zmq-ctx-destroy")
 
-(define-ffi-function zmq-socket "zmq_socket"
+(define-ffi-function zmq--socket "zmq_socket"
   (:pointer "Pointer to a socket.")
-  ((:pointer *context "Created by `zmq-ctx-new '.")
+  ((:pointer *context "Created by `zmq--ctx-new '.")
    (:int type)) zmq
    "create ØMQ socket.
 http://api.zeromq.org/4-2:zmq-socket")
 
-(define-ffi-function zmq-close "zmq_close"
+(define-ffi-function zmq--close "zmq_close"
   (:int "Status")
-  ((:pointer *socket "Socket pointer created by `zmq-socket'")) zmq
+  ((:pointer *socket "Socket pointer created by `zmq--socket'")) zmq
   "close ØMQ socket.
 http://api.zeromq.org/4-2:zmq-close")
 
-(define-ffi-function zmq-connect "zmq_connect"
+(define-ffi-function zmq--connect "zmq_connect"
   (:int "Status")
-  ((:pointer *socket "Socket pointer created by `zmq-socket'")
+  ((:pointer *socket "Socket pointer created by `zmq--socket'")
    (:pointer *endpoint "Char pointer, e.g. (ffi-make-c-string \"tcp://localhost:5555\")"))
   zmq
   "create outgoing connection from socket.
 http://api.zeromq.org/4-2:zmq-connect")
 
-(define-ffi-function zmq-disconnect "zmq_disconnect"
+(define-ffi-function zmq--disconnect "zmq_disconnect"
   (:int "Status")
-  ((:pointer *socket "Socket pointer created by `zmq-socket'")
+  ((:pointer *socket "Socket pointer created by `zmq--socket'")
    (:pointer *endpoint "Char pointer, e.g. (ffi-make-c-string \"tcp://localhost:5555\")"))
   zmq
   "disconnect from socket from endpoint.
 http://api.zeromq.org/4-2:zmq-disconnect")
 
-(define-ffi-function zmq-setsockopt "zmq_setsockopt"
+(define-ffi-function zmq--setsockopt "zmq_setsockopt"
   (:int "Status")
-  ((:pointer *socket "Socket pointer created by `zmq-socket'")
+  ((:pointer *socket "Socket pointer created by `zmq--socket'")
    (:int optnam "Name of option to set")
    (:pointer *optval "Pointer to option value")
    (:size_t len "Option value length in bytes"))
@@ -216,9 +216,9 @@ http://api.zeromq.org/4-2:zmq-disconnect")
   "set socket option.
 http://api.zeromq.org/4-2:zmq-setsockopt")
 
-(define-ffi-function zmq-getsockopt "zmq_getsockopt"
+(define-ffi-function zmq--getsockopt "zmq_getsockopt"
   (:int "Status")
-  ((:pointer *socket "Socket pointer created by `zmq-socket'")
+  ((:pointer *socket "Socket pointer created by `zmq--socket'")
    (:int optnam "Name of option to get")
    (:pointer *optval "Buffer to receive option value")
    (:pointer *len "Pointer to length of bytes written to OPTVAL."))
@@ -226,7 +226,7 @@ http://api.zeromq.org/4-2:zmq-setsockopt")
   "get socket option.
 http://api.zeromq.org/4-2:zmq-getsockopt")
 
-(define-ffi-function zmq-send "zmq_send"
+(define-ffi-function zmq--send "zmq_send"
   (:int "Number of bytes sent or -1 on failure.")
   ((:pointer *socket "Pointer to a socket.")
    (:pointer *msg "Pointer to a C-string to send")
@@ -236,7 +236,7 @@ http://api.zeromq.org/4-2:zmq-getsockopt")
   "send a message part on a socket.
 http://api.zeromq.org/4-2:zmq-send")
 
-(define-ffi-function zmq-recv "zmq_recv"
+(define-ffi-function zmq--recv "zmq_recv"
   (:int "Number of bytes received or -1 on failure.")
   ((:pointer *socket)
    (:pointer *buf "Pointer to c-string to put result in.")
@@ -344,21 +344,21 @@ sending each message part except the final one.")
 
 ;; ZMQ API
 
-(defun zmq-error-string ()
+(defun zmq--error-string ()
   "Retrieve the error message string of the last ZMQ error."
-  (ffi-get-c-string (zmq-strerror (zmq-errno))))
+  (ffi-get-c-string (zmq--strerror (zmq--errno))))
 
-(defun zmq-receive (num socket)
+(defun zmq--receive (num socket)
   "Read a string (up to NUM bytes) from SOCKET.
 
 May read fewer bytes if that's all that the socket has to give."
   (let ((status -1))
     (with-ffi-string (r (make-string num ? ))
       (while (< status 0)
-        (setq status (zmq-recv socket r num ZMQ-DONTWAIT)))
+        (setq status (zmq--recv socket r num ZMQ-DONTWAIT)))
       (substring (ffi-get-c-string r) 0 status))))
 
-(defun zmq-receive-multi (num socket)
+(defun zmq--receive-multi (num socket)
   "Read a multipart message (up to NUM bytes per message) from SOCKET.
 
 Returns a list of the various parts."
@@ -369,15 +369,15 @@ Returns a list of the various parts."
       (with-ffi-string (recv-str (make-string num ? ))
         (ffi--mem-set size :size_t (ffi--type-size :int))
         (while more
-          (setq num-bytes (zmq-recv socket recv-str num 0))
+          (setq num-bytes (zmq--recv socket recv-str num 0))
           (when (= -1 num-bytes)
             (error "Could not receive a message"))
           (push (substring (ffi-get-c-string recv-str) 0 num-bytes) ret)
-          (zmq-getsockopt socket ZMQ-RCVMORE zmore size)
+          (zmq--getsockopt socket ZMQ-RCVMORE zmore size)
           (setq more (ffi--mem-ref zmore :bool)))))
     (nreverse ret)))
 
-(defun zmq-send-multi (str-list socket)
+(defun zmq--send-multi (str-list socket)
   "Send STR-LIST as a multi-part message to SOCKET."
   (let (str flag)
     (while (setq flag 0
@@ -385,15 +385,15 @@ Returns a list of the various parts."
       (when str-list
         (setq flag ZMQ-SNDMORE))
       (with-ffi-string (s str)
-        (zmq-send socket s (length str) flag)))))
+        (zmq--send socket s (length str) flag)))))
 
-(defun zmq-check-for-receive (socket)
+(defun zmq--check-for-receive (socket)
   "Check if a message may be received from SOCKET."
   (let (events)
     (with-ffi-temporaries ((zevents :int)
                            (size :size_t))
       (ffi--mem-set size :size_t (ffi--type-size :int))
-      (zmq-getsockopt socket ZMQ-EVENTS zevents size)
+      (zmq--getsockopt socket ZMQ-EVENTS zevents size)
       (setq events (ffi--mem-ref zevents :int)))
     (> (logand events ZMQ-POLLIN) 0)))
 
@@ -493,9 +493,9 @@ Returns an `jupyter-struct'."
     (while (not (file-exists-p full-file)) (sleep-for 0 5))
     ;; so we can read the file here
     (setq json (json-read-file full-file)
-          ctx (zmq-ctx-new)
-          shell (zmq-socket ctx ZMQ-DEALER)
-          iopub (zmq-socket ctx ZMQ-SUB))
+          ctx (zmq--ctx-new)
+          shell (zmq--socket ctx ZMQ-DEALER)
+          iopub (zmq--socket ctx ZMQ-SUB))
     (with-ffi-strings ((s (format "%s://%s:%s"
                                   (cdr (assq 'transport json))
                                   (cdr (assq 'ip json))
@@ -505,9 +505,9 @@ Returns an `jupyter-struct'."
                                   (cdr (assq 'ip json))
                                   (cdr (assq 'iopub_port json))))
                        (z ""))
-      (zmq-connect shell s)
-      (zmq-connect iopub i)
-      (zmq-setsockopt iopub ZMQ-SUBSCRIBE z 0))
+      (zmq--connect shell s)
+      (zmq--connect iopub i)
+      (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0))
     (jupyter-struct--create :name name
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
@@ -524,9 +524,9 @@ Returns an `jupyter-struct'."
       (kill-process proc)
       (sleep-for 0 5)))
   (kill-buffer (jupyter-struct-buffer struct))
-  (zmq-close (jupyter-struct-iopub struct))
-  (zmq-close (jupyter-struct-shell struct))
-  (zmq-ctx-destroy (jupyter-struct-context struct)))
+  (zmq--close (jupyter-struct-iopub struct))
+  (zmq--close (jupyter-struct-shell struct))
+  (zmq--ctx-destroy (jupyter-struct-context struct)))
 
 ;; Low level
 
@@ -534,13 +534,13 @@ Returns an `jupyter-struct'."
   "Read a Jupyter protocol message from 0MQ SOCKET.
 
 Returns a list of elements of the message."
-  (zmq-receive-multi jupyter-zmq-max-recv socket))
+  (zmq--receive-multi jupyter-zmq-max-recv socket))
 
 (defun jupyter--send-message (socket msg)
   "Send Jupyter protocol MSG to 0MQ SOCKET.
 
 MSG is a list of elements of the message."
-  (zmq-send-multi msg socket))
+  (zmq--send-multi msg socket))
 
 (defun jupyter--poll-deferred (socket &optional timeout)
   "Defer polling SOCKET until a reply is ready.
@@ -551,7 +551,7 @@ Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (deferred:lambda (elapsed)
       (cond
-       ((zmq-check-for-receive socket) t)
+       ((zmq--check-for-receive socket) t)
        ((and timeout elapsed (> elapsed timeout))
         (error "Socket poll timed out"))
        (t (deferred:next self (+ (or elapsed 0) jupyter-poll-msec)))))))
