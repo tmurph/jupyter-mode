@@ -1102,12 +1102,18 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 
 ;; Minor Mode
 
-(define-minor-mode jupyter-mode
-  "Utilities for working with connected Jupyter kernels."
-  nil " Jupyter" nil)
+(defvar jupyter--session-kernels-alist nil
+  "Internal alist of (SESSION . KERNEL) pairs.")
+
+(defvar jupyter--session-langs-alist nil
+  "Internal alist of (SESSION . LANGUAGE) pairs.")
 
 (defvar-local jupyter-current-kernel nil
   "The Jupyter kernel struct associated with the current buffer.")
+
+(define-minor-mode jupyter-mode
+  "Utilities for working with connected Jupyter kernels."
+  nil " Jupyter" nil)
 
 ;; Company Completion
 
@@ -1167,12 +1173,6 @@ IGNORED is not used."
                          kernel (length arg) arg))))))
 
 ;; Babel
-
-(defvar ob-jupyter-session-kernels-alist nil
-  "Internal alist of (SESSION . KERNEL) pairs.")
-
-(defvar ob-jupyter-session-langs-alist nil
-  "Internal alist of (SESSION . LANGUAGE) pairs.")
 
 (defun ob-jupyter-babel-output (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'output.
@@ -1301,8 +1301,8 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
 BABEL-INFO is as returned by `org-babel-get-src-block-info'."
   (let* ((params (nth 2 babel-info))
          (session (cdr (assq :session params)))
-         (kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
-         (lang (cdr (assoc session ob-jupyter-session-langs-alist))))
+         (kernel (cdr (assoc session jupyter--session-kernels-alist)))
+         (lang (cdr (assoc session jupyter--session-langs-alist))))
     (if (not kernel)
         (message "No running kernel. Cannot set up src buffer.")
       ;; Hack around the normal behavior of changing major mode.
@@ -1329,7 +1329,7 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
 PARAMS must include a :session parameter associated with an
 active kernel, to determine the underlying expansion language."
   (let* ((session (cdr (assq :session params)))
-         (lang (cdr (assoc session ob-jupyter-session-langs-alist)))
+         (lang (cdr (assoc session jupyter--session-langs-alist)))
          (var-fn (intern (format "org-babel-variable-assignments:%s" lang)))
          (var-fn (if (fboundp var-fn) var-fn #'ignore)))
     (if (not lang)
@@ -1344,7 +1344,7 @@ active kernel, to determine the underlying expansion language.
 
 If provided, include VAR-LINES before BODY."
   (let* ((session (cdr (assq :session params)))
-         (lang (cdr (assoc session ob-jupyter-session-langs-alist)))
+         (lang (cdr (assoc session jupyter--session-langs-alist)))
          (expand-fn (intern (format "org-babel-expand-body:%s" lang)))
          (expand-fn (if (fboundp expand-fn)
                         expand-fn
@@ -1358,7 +1358,7 @@ If provided, include VAR-LINES before BODY."
 
 PARAMS are the Org Babel parameters associated with the block."
   (let* ((session (cdr (assq :session params)))
-         (kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
+         (kernel (cdr (assoc session jupyter--session-kernels-alist)))
          (var-lines (org-babel-variable-assignments:jupyter params))
          (code (org-babel-expand-body:jupyter body params var-lines))
          (result-params (cdr (assq :result-params params)))
@@ -1389,18 +1389,18 @@ If no such buffer exists yet, create one with
 `jupyter--initialize-kernel'.  If Babel PARAMS includes
 a :kernel parameter, that will be passed to
 `jupyter--initialize-kernel'."
-  (let ((kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
+  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist)))
         (kernel-param (cdr (assq :kernel params))))
     (unless kernel
       (setq kernel (jupyter--initialize-kernel kernel-param session))
-      (push (cons session kernel) ob-jupyter-session-kernels-alist)
+      (push (cons session kernel) jupyter--session-kernels-alist)
       (deferred:$
         (deferred:callback-post
           (jupyter--kernel-info-deferred kernel))
         (deferred:nextc it #'jupyter--language)
         (deferred:nextc it
           (lambda (lang)
-            (push (cons session lang) ob-jupyter-session-langs-alist)))
+            (push (cons session lang) jupyter--session-langs-alist)))
         (deferred:set-next it
           (jupyter--kernel-info-deferred kernel))
         (deferred:nextc it #'jupyter--implementation)
@@ -1418,14 +1418,14 @@ a :kernel parameter, that will be passed to
 
 (defun ob-jupyter-cleanup-session (session)
   "Remove SESSION from internal alists and finalize the kernel."
-  (let ((kernel (cdr (assoc session ob-jupyter-session-kernels-alist))))
-    (setq ob-jupyter-session-kernels-alist
+  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist))))
+    (setq jupyter--session-kernels-alist
           (ob-jupyter-assoc-delete-all
-           session ob-jupyter-session-kernels-alist)
-          ob-jupyter-session-langs-alist
+           session jupyter--session-kernels-alist)
+          jupyter--session-langs-alist
           (ob-jupyter-assoc-delete-all
-           session ob-jupyter-session-langs-alist))
-    (ob-jupyter-assoc-delete-all session ob-jupyter-session-langs-alist)
+           session jupyter--session-langs-alist))
+    (ob-jupyter-assoc-delete-all session jupyter--session-langs-alist)
     (jupyter-finalize-kernel kernel)))
 
 ;; Python specific
