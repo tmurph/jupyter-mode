@@ -89,10 +89,10 @@ Elements of ALIST that are not conses are ignore."
 
 ;; Constants
 
-(defconst ob-jupyter-delim "<IDS|MSG>"
+(defconst jupyter-delim "<IDS|MSG>"
   "The special delimiter used in the Jupyter wire protocol.")
 
-(defconst ob-jupyter-protocol-version "5.2"
+(defconst jupyter-protocol-version "5.2"
   "Messaging protocol implemented in this library.
 
 The Jupyter message specification is versioned independently of
@@ -101,7 +101,7 @@ the packages that use it, e.g. jupyter servers and clients.
 For full details see
 http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
-(defconst ob-jupyter-zmq-max-recv (expt 2 17)
+(defconst jupyter-zmq-max-recv (expt 2 17)
   "The size, in bytes, allocated to read ZMQ messages.")
 
 ;; External Definitions
@@ -535,7 +535,7 @@ Returns an `ob-jupyter-struct'."
   "Read a Jupyter protocol message from 0MQ SOCKET.
 
 Returns a list of elements of the message."
-  (zmq-receive-multi ob-jupyter-zmq-max-recv socket))
+  (zmq-receive-multi jupyter-zmq-max-recv socket))
 
 (defun ob-jupyter-send-message (socket msg)
   "Send Jupyter protocol MSG to 0MQ SOCKET.
@@ -567,7 +567,7 @@ Returns MSG unchanged if it authenticates.
 Uses `ob-jupyter-hmac-sha256' to authenticate."
   (let ((orig-msg msg)
         hmac rest)
-    (while (and msg (not (string= ob-jupyter-delim (pop msg)))))
+    (while (and msg (not (string= jupyter-delim (pop msg)))))
     (setq hmac (pop msg)
           rest (apply #'concat msg))
     (unless (or (string= hmac "")
@@ -648,7 +648,7 @@ message before returning."
     (if (stringp id-parts)
         (push id-parts ret)
       (dolist (elt id-parts) (push elt ret)))
-    (push ob-jupyter-delim ret)
+    (push jupyter-delim ret)
     (if (and key (not (string= key "")))
         (push (ob-jupyter-hmac-sha256 (apply #'concat msg-parts) key) ret)
       (push "" ret))
@@ -659,7 +659,7 @@ message before returning."
   "Convert Jupyter protocol MSG (in list-of-json-str form) to alist."
   (let ((keys '(header parent_header metadata content))
         key json-str ret)
-    (while (and msg (not (string= ob-jupyter-delim (pop msg)))))
+    (while (and msg (not (string= jupyter-delim (pop msg)))))
     (pop msg)                             ; discard hmac
     (while (setq key (pop keys)
                  json-str (pop msg))
@@ -690,7 +690,7 @@ Otherwise, generate a new session UUID."
     (session . ,(or session (org-id-uuid)))
     (date . ,(format-time-string "%FT%T.%6NZ" nil t))
     (msg_type . ,msg_type)
-    (version . ,ob-jupyter-protocol-version)))
+    (version . ,jupyter-protocol-version)))
 
 (defun ob-jupyter-kernel-info-request-alist ()
   "Return a Jupyter protocol request for kernel info."
