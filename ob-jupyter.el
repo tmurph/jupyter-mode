@@ -62,7 +62,7 @@ the packages that use it, e.g. jupyter servers and clients.
 For full details see
 http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
-;; External functions
+;; External Definitions
 
 (autoload 'org-id-uuid "org-id")
 
