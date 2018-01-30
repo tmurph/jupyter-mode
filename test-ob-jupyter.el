@@ -323,5 +323,17 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                     (text . "contents"))))
     (should (equal (ob-jupyter-stream alist) expected))))
 
+(ert-deftest ob-jupyter-display-data ()
+  "Does `ob-jupyter-display-data' parse execution reply alists?"
+  (let ((alist '((iopub
+                  ((header (msg_type . "display_data"))
+                   (content
+                    (data
+                     (text/plain . "always here")
+                     (image/png . "maybe here")))))))
+        (expected '((text/plain . "always here")
+                    (image/png . "maybe here"))))
+    (should (equal (ob-jupyter-display-data alist) expected))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
