@@ -93,7 +93,7 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
   :type '(repeat string)
   :group 'ob-jupyter)
 
-(defcustom ob-jupyter-poll-msec 1
+(defcustom ob-jupyter-poll-msec 5
   "The wait time (in msec) between polls to Jupyter sockets.
 
 A shorter wait time increases Emacs CPU load."
