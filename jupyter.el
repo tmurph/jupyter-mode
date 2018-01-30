@@ -1107,7 +1107,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 (defvar jupyter--session-langs-alist nil
   "Internal alist of (SESSION . LANGUAGE) pairs.")
 
-(defvar-local jupyter-current-kernel nil
+(defvar-local jupyter--current-kernel nil
   "The Jupyter kernel struct associated with the current buffer.")
 
 (define-minor-mode jupyter-mode
@@ -1150,7 +1150,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 
 IGNORED is not used."
   (interactive (list 'interactive))
-  (let ((kernel jupyter-current-kernel)
+  (let ((kernel jupyter--current-kernel)
         (pos (1- (point)))
         (code (buffer-substring-no-properties (point-min) (point))))
     (cl-case command
@@ -1316,7 +1316,7 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
       (cl-letf (((symbol-function 'kill-all-local-variables)
                  (lambda () (run-hooks 'change-major-mode-hook))))
         (funcall (org-src--get-lang-mode lang)))
-      (setq-local jupyter-current-kernel kernel)
+      (setq-local jupyter--current-kernel kernel)
       (jupyter-mode +1)
       (run-hook-with-args
        (intern (format "ob-jupyter-%s-edit-prep-hook" lang))
