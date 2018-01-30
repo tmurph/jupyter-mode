@@ -48,6 +48,7 @@
 (require 'dash)
 (require 'deferred)
 (require 'company)
+(require 'ob)
 
 ;; Constants
 
