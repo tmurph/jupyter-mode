@@ -31,8 +31,8 @@
 ;; The mode provides commands to inspect available kernels, start
 ;; inferior kernel processes, and connect buffers to existing processes.
 
-;; This library also includes `ob-jupyter.el', Org-Babel support for
-;; communicating with Jupyter kernels.
+;; This library also supports Org Babel communication with Jupyter
+;; kernels.
 ;;
 ;; Enable with
 ;;   (add-to-list 'org-src-lang-modes '("jupyter" . fundamental))
@@ -40,8 +40,7 @@
 ;; The library will take care of setting up Org Source buffers with the
 ;; appropriate kernel language.
 
-;; This library also includes `company-jupyter.el', support for
-;; completion with Company.
+;; This library also supports completion with Company.
 ;;
 ;; Enable with
 ;;   (add-to-list 'company-backends 'company-jupyter)
