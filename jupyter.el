@@ -517,7 +517,7 @@ Returns an `jupyter-struct'."
                             :context ctx
                             :key (cdr (assq 'key json)))))
 
-(defun jupyter-finalize-kernel (struct)
+(defun jupyter--finalize-kernel (struct)
   "Forcibly stop the kernel in STRUCT and clean up associated ZMQ objects."
   (let ((proc (jupyter-struct-process struct)))
     (when (process-live-p proc)
@@ -1455,7 +1455,7 @@ a :kernel parameter, that will be passed to
           (jupyter--assoc-delete-all
            session jupyter--session-langs-alist))
     (jupyter--assoc-delete-all session jupyter--session-langs-alist)
-    (jupyter-finalize-kernel kernel)))
+    (jupyter--finalize-kernel kernel)))
 
 ;; Python specific
 
