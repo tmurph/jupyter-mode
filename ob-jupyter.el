@@ -805,6 +805,14 @@ Returns an alist like:
   (format "%s: %s" (cdr (assoc 'ename error-alist))
           (cdr (assoc 'evalue error-alist))))
 
+(defun ob-jupyter-inspect-text (inspect-reply-alist)
+  "Extract the plaintext description from INSPECT-REPLY-ALIST."
+  (->> inspect-reply-alist
+       (ob-jupyter-shell-content-from-alist)
+       (assoc 'data)
+       (assoc 'text/plain)
+       (cdr)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)

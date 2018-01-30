@@ -348,5 +348,31 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                     (evalue . "value"))))
     (should (equal (ob-jupyter-error alist) expected))))
 
+(ert-deftest ob-jupyter-inspect-text ()
+  "Does `ob-jupyter-inspect-text' parse inspect reply alists?"
+  (let ((alist
+         '((shell
+            ((header
+              (msg_type . "inspect_reply"))
+             (parent_header)
+             (metadata)
+             (content
+              (data
+               (text/plain . "Hello World!")))))
+           (iopub
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "busy")))
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "idle"))))))
+        (expected-text "Hello World!"))
+    (should (string= (ob-jupyter-inspect-text alist)
+                     expected-text))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
