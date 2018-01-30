@@ -31,6 +31,9 @@
 ;; Org-Babel support for working with Jupyter servers.  This library
 ;; aims to make Emacs a full-fledged Jupyter client.
 
+;; Enable with
+;;   (add-to-list 'org-src-lang-modes '("jupyter" . fundamental))
+
 ;; Much of the ZMQ FFI code has been copied without changes from John
 ;; Kitchin's work here:
 ;; http://kitchingroup.cheme.cmu.edu/blog/2017/07/13/An-Emacs-zeromq-library-using-an-ffi/
