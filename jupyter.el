@@ -428,28 +428,28 @@ Returns a list of the various parts."
 
 ;; Process Management
 
-(cl-defstruct (ob-jupyter-struct
-               (:constructor ob-jupyter-struct-create)
-               (:copier ob-jupyter-struct-copy))
+(cl-defstruct (jupyter-struct
+               (:constructor jupyter-struct--create)
+               (:copier jupyter-struct--copy))
   "Jupyter kernel management object.
 
-`ob-jupyter-struct-name' The name used to identify this struct.
+`jupyter-struct-name' The name used to identify this struct.
 
-`ob-jupyter-struct-process' The Jupyter process started by Emacs.
+`jupyter-struct-process' The Jupyter process started by Emacs.
 
-`ob-jupyter-struct-buffer' The comint REPL buffer.
+`jupyter-struct-buffer' The comint REPL buffer.
 
-`ob-jupyter-struct-conn-file-name'
+`jupyter-struct-conn-file-name'
 
-`ob-jupyter-struct-iopub' A ZMQ socket object connected to the
+`jupyter-struct-iopub' A ZMQ socket object connected to the
   Jupyter IOPub port.
 
-`ob-jupyter-struct-shell' A ZMQ socket object connected to the
+`jupyter-struct-shell' A ZMQ socket object connected to the
 Jupyter Shell port.
 
-`ob-jupyter-struct-context' A ZMQ context object to manage the sockets.
+`jupyter-struct-context' A ZMQ context object to manage the sockets.
 
-`ob-jupyter-struct-key' The HMAC-SHA256 key used to authenticate
+`jupyter-struct-key' The HMAC-SHA256 key used to authenticate
 to the Jupyter server."
   (name nil :read-only t)
   (process nil :read-only t)
@@ -460,7 +460,7 @@ to the Jupyter server."
   (context nil :read-only t)
   (key nil :read-only t))
 
-(defun ob-jupyter-initialize-kernel
+(defun jupyter--initialize-kernel
     (kernel name &optional cmd-args kernel-args)
   "Start a Jupyter KERNEL and associate a comint repl.
 
@@ -476,7 +476,7 @@ $ `jupyter-command' `jupyter-command-args'
   -f derived-connection-file
   CMD-ARGS --kernel KERNEL KERNEL-ARGS
 
-Returns an `ob-jupyter-struct'."
+Returns an `jupyter-struct'."
   (let* ((proc-name (format "*ob-jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
          (conn-file (format "emacs-%s.json" name))
@@ -509,25 +509,25 @@ Returns an `ob-jupyter-struct'."
       (zmq-connect shell s)
       (zmq-connect iopub i)
       (zmq-setsockopt iopub ZMQ-SUBSCRIBE z 0))
-    (ob-jupyter-struct-create :name name
-                              :process (get-buffer-process proc-buf)
-                              :buffer proc-buf
-                              :conn-file-name conn-file
-                              :iopub iopub
-                              :shell shell
-                              :context ctx
-                              :key (cdr (assq 'key json)))))
+    (jupyter-struct--create :name name
+                            :process (get-buffer-process proc-buf)
+                            :buffer proc-buf
+                            :conn-file-name conn-file
+                            :iopub iopub
+                            :shell shell
+                            :context ctx
+                            :key (cdr (assq 'key json)))))
 
-(defun ob-jupyter-finalize-kernel (struct)
+(defun jupyter-finalize-kernel (struct)
   "Forcibly stop the kernel in STRUCT and clean up associated ZMQ objects."
-  (let ((proc (ob-jupyter-struct-process struct)))
+  (let ((proc (jupyter-struct-process struct)))
     (when (process-live-p proc)
       (kill-process proc)
       (sleep-for 0 5)))
-  (kill-buffer (ob-jupyter-struct-buffer struct))
-  (zmq-close (ob-jupyter-struct-iopub struct))
-  (zmq-close (ob-jupyter-struct-shell struct))
-  (zmq-ctx-destroy (ob-jupyter-struct-context struct)))
+  (kill-buffer (jupyter-struct-buffer struct))
+  (zmq-close (jupyter-struct-iopub struct))
+  (zmq-close (jupyter-struct-shell struct))
+  (zmq-ctx-destroy (jupyter-struct-context struct)))
 
 ;; Low level
 
@@ -1011,9 +1011,9 @@ receive on that socket takes longer than TIMEOUT msec.
 Returns a deferred object that can be chained with `deferred:$'."
   (ob-jupyter-roundtrip-deferred-1
    alist
-   (ob-jupyter-struct-shell kernel)
-   (ob-jupyter-struct-iopub kernel)
-   (ob-jupyter-struct-key kernel)
+   (jupyter-struct-shell kernel)
+   (jupyter-struct-iopub kernel)
+   (jupyter-struct-key kernel)
    timeout))
 
 (defun ob-jupyter-kernel-info-deferred (kernel &optional timeout)
@@ -1386,13 +1386,13 @@ PARAMS are the Org Babel parameters associated with the block."
   "Return the comint buffer associated with SESSION.
 
 If no such buffer exists yet, create one with
-`ob-jupyter-initialize-kernel'.  If Babel PARAMS includes
+`jupyter--initialize-kernel'.  If Babel PARAMS includes
 a :kernel parameter, that will be passed to
-`ob-jupyter-initialize-kernel'."
+`jupyter--initialize-kernel'."
   (let ((kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
         (kernel-param (cdr (assq :kernel params))))
     (unless kernel
-      (setq kernel (ob-jupyter-initialize-kernel kernel-param session))
+      (setq kernel (jupyter--initialize-kernel kernel-param session))
       (push (cons session kernel) ob-jupyter-session-kernels-alist)
       (deferred:$
         (deferred:callback-post
@@ -1407,8 +1407,8 @@ a :kernel parameter, that will be passed to
         (deferred:nextc it
           (lambda (interpreter)
             (ob-jupyter-setup-inferior
-             interpreter (ob-jupyter-struct-buffer kernel))))))
-    (ob-jupyter-struct-buffer kernel)))
+             interpreter (jupyter-struct-buffer kernel))))))
+    (jupyter-struct-buffer kernel)))
 
 (defun ob-jupyter-setup-inferior (interp inf-buffer)
   "Set up the appropriate major mode in INF-BUFFER according to INTERP."
@@ -1426,7 +1426,7 @@ a :kernel parameter, that will be passed to
           (ob-jupyter-assoc-delete-all
            session ob-jupyter-session-langs-alist))
     (ob-jupyter-assoc-delete-all session ob-jupyter-session-langs-alist)
-    (ob-jupyter-finalize-kernel kernel)))
+    (jupyter-finalize-kernel kernel)))
 
 ;; Python specific
 
