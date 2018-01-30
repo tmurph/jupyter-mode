@@ -785,18 +785,17 @@ receive on that socket takes longer than TIMEOUT msec.
 Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (lambda ()
-      (deferred:$
-        (deferred:callback-post
-          (ob-jupyter-send-alist-deferred alist shell-socket key))
-        (deferred:parallel
-          `((shell . ,(deferred:callback-post
-                        (ob-jupyter-recv-all-deferred
-                         shell-socket
-                         #'ob-jupyter-shell-last-p key timeout)))
-            (iopub . ,(deferred:callback-post
-                        (ob-jupyter-recv-all-deferred
-                         io-socket
-                         #'ob-jupyter-iopub-last-p key timeout)))))))))
+      (deferred:callback-post
+        (ob-jupyter-send-alist-deferred alist shell-socket key))
+      (deferred:parallel
+        `((shell . ,(deferred:callback-post
+                      (ob-jupyter-recv-all-deferred
+                       shell-socket
+                       #'ob-jupyter-shell-last-p key timeout)))
+          (iopub . ,(deferred:callback-post
+                      (ob-jupyter-recv-all-deferred
+                       io-socket
+                       #'ob-jupyter-iopub-last-p key timeout))))))))
 
 ;; Debug
 
