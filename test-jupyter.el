@@ -24,21 +24,6 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            into result
            finally return (cons 'progn result)))
 
-(ert-deftest ob-jupyter-support-zmq ()
-  "Does ob-jupyter know enough about 0MQ?"
-  (should (fboundp 'zmq))
-  (should (fboundp 'zmq-ctx-new))
-  (should (fboundp 'zmq-ctx-destroy))
-  (should (fboundp 'zmq-socket))
-  (should (fboundp 'zmq-close))
-  (should (fboundp 'zmq-connect))
-  (should (fboundp 'zmq-send))
-  (should (fboundp 'zmq-recv))
-  (should (eql ZMQ-SUB 2))
-  (should (eql ZMQ-REQ 3))
-  (should (eql ZMQ-DEALER 5))
-  (should (eql ZMQ-SUBSCRIBE 6)))
-
 (ert-deftest-parametrize jupyter-hmac
   (key message-contents expected-hash)
   (("" ""
