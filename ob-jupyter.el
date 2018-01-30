@@ -800,6 +800,11 @@ Returns an alist like:
             tb)
       (current-buffer))))
 
+(defun ob-jupyter-error-string (error-alist)
+  "Format ERROR-ALIST to a string."
+  (format "%s: %s" (cdr (assoc 'ename error-alist))
+          (cdr (assoc 'evalue error-alist))))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)
