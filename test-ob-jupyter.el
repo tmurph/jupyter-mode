@@ -400,5 +400,32 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ob-jupyter-cursor-pos alist)
                    expected-cons))))
 
+(ert-deftest ob-jupyter-matches ()
+  "Does `ob-jupyter-matches' parse complete reply alists?"
+  (let ((alist
+         '((shell
+            ((header
+              (msg_type . "complete_reply"))
+             (parent_header)
+             (metadata)
+             (content
+              (matches .
+                       ["np.add" "np.add_docstring" "np.add_newdoc" "np.add_newdoc_ufunc" "np.add_newdocs"]))))
+           (iopub
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "busy")))
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "idle"))))))
+        (expected-lst '("np.add" "np.add_docstring" "np.add_newdoc"
+                        "np.add_newdoc_ufunc" "np.add_newdocs")))
+    (should (equal (ob-jupyter-matches alist)
+                   expected-lst))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here

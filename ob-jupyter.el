@@ -821,6 +821,14 @@ Returns an alist like:
          (cursor-start (cdr (assoc 'cursor_start content))))
     (cons cursor-start cursor-end)))
 
+(defun ob-jupyter-matches (complete-reply-alist)
+  "Extract the list of completions from COMPLETE-REPLY-ALIST."
+  (let* ((content (ob-jupyter-shell-content-from-alist
+                   complete-reply-alist))
+         (matches-vector (cdr (assoc 'matches content)))
+         (matches-lst (append matches-vector nil)))
+    matches-lst))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)
