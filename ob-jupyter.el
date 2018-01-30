@@ -472,8 +472,10 @@ Returns an `ob-jupyter-struct'."
 (defun ob-jupyter-finalize-kernel (struct)
   "Forcibly stop the kernel in STRUCT and clean up associated ZMQ objects."
   (let ((proc (ob-jupyter-struct-process struct)))
-    (if (process-live-p proc)
-        (kill-process proc)))
+    (when (process-live-p proc)
+      (kill-process proc)
+      (sleep-for 0 5)))
+  (kill-buffer (ob-jupyter-struct-buffer struct))
   (zmq-close (ob-jupyter-struct-iopub struct))
   (zmq-close (ob-jupyter-struct-shell struct))
   (zmq-ctx-destroy (ob-jupyter-struct-context struct)))
