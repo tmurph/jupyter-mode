@@ -730,6 +730,13 @@ If RESTART, restart the kernel after the shutdown."
        (assoc 'name)
        (cdr)))
 
+(defun ob-jupyter-implementation (kernel-info-reply-alist)
+  "Extract the kernel implementation from KERNEL-INFO-REPLY-ALIST."
+  (->> kernel-info-reply-alist
+       (ob-jupyter-shell-content-from-alist)
+       (assoc 'implementation)
+       (cdr)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)

@@ -234,5 +234,30 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (string= (ob-jupyter-language alist)
                      expected-text))))
 
+(ert-deftest ob-jupyter-implementation ()
+  "Does `ob-jupyter-implementaion' parse kernel info reply alists?"
+  (let ((alist
+         '((shell
+            ((header
+              (msg_type . "kernel_info_reply"))
+             (parent_header)
+             (metadata)
+             (content
+              (implementation . "ipython"))))
+           (iopub
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "busy")))
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "idle"))))))
+        (expected-text "ipython"))
+    (should (string= (ob-jupyter-implementation alist)
+                     expected-text))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
