@@ -757,6 +757,16 @@ Returns an alist of mimetypes and contents, so like:
        (assoc 'data)
        (cdr)))
 
+(defun ob-jupyter-stream (execute-reply-alist)
+  "Extract the IOPub \"stream\" from EXECUTE-REPLY-ALIST.
+
+Returns an alist of stream data like:
+ \((name . \"stdout\")
+  \(text . \"contents\"))"
+  (->> execute-reply-alist
+       (ob-jupyter-iopub-content-from-alist "stream")
+       (cdr)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)

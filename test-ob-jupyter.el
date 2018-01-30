@@ -312,5 +312,16 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     '((text/plain . "minimal example"))))
   (should (equal (ob-jupyter-execute-result alist) expected)))
 
+(ert-deftest ob-jupyter-stream ()
+  "Does `ob-jupyter-stream' parse execution reply alists?"
+  (let ((alist '((iopub
+                  ((header (msg_type . "stream"))
+                   (content
+                    (name . "stdout")
+                    (text . "contents"))))))
+        (expected '((name . "stdout")
+                    (text . "contents"))))
+    (should (equal (ob-jupyter-stream alist) expected))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
