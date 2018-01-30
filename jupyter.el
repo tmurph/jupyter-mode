@@ -1112,7 +1112,10 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 
 (define-minor-mode jupyter-mode
   "Utilities for working with connected Jupyter kernels."
-  nil " Jupyter" nil)
+  nil " Jupyter" nil
+  (if jupyter-mode
+      (ignore)
+    (setq jupyter--current-kernel nil)))
 
 ;; Company Completion
 
