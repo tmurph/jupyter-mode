@@ -1110,6 +1110,34 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 (defvar-local jupyter--current-kernel nil
   "The Jupyter kernel struct associated with the current buffer.")
 
+(defun jupyter--spec-name (kernelspec-alist)
+  "Extract the name from KERNELSPEC-ALIST."
+  (symbol-name (car kernelspec-alist)))
+
+(defun jupyter--list-kernelspecs ()
+  "Return a list of available Jupyter kernelspecs."
+  (mapcar #'jupyter--spec-name
+          (cdar (json-read-from-string
+                 (shell-command-to-string
+                  "jupyter-kernelspec list --json")))))
+
+(defun jupyter-connect (session)
+  "Connect the current buffer to the kernel associated with SESSION.
+
+If no kernel is currently associated with SESSION, initialize one."
+  (interactive (completing-read
+                "Session: " jupyter--session-kernels-alist nil 'confirm))
+  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist)))
+        lang kernelspec)
+    (unless kernel
+      (setq lang (substring (symbol-name major-mode)
+                            0 (- (length "-mode")))
+            kernelspec (completing-read
+                        "Kernel: " (jupyter--list-kernelspecs)
+                        nil t nil nil lang)
+            kernel (jupyter--initialize-kernel kernelspec session)))
+    (setq jupyter--current-kernel kernel)))
+
 (define-minor-mode jupyter-mode
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil
