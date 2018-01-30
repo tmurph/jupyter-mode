@@ -50,6 +50,25 @@
 (require 'company)
 (require 'ob)
 
+;; Bullshit
+
+;;; this is exactly like `assq-delete-all' except with `equal'
+;;; for some reason that's not built in
+(defun ob-jupyter-assoc-delete-all (key alist)
+  "Delete from ALIST all elements whose car is `equal' to KEY.
+Return the modified alist.
+Elements of ALIST that are not conses are ignore."
+  (while (and (consp (car alist))
+              (equal (car (car alist)) key))
+    (setq alist (cdr alist)))
+  (let ((tail alist) tail-cdr)
+    (while (setq tail-cdr (cdr tail))
+      (if (and (consp (car tail-cdr))
+               (equal (car (car tail-cdr)) key))
+          (setcdr tail (cdr tail-cdr))
+        (setq tail tail-cdr))))
+  alist)
+
 ;; Constants
 
 (defconst ob-jupyter-delim "<IDS|MSG>"
@@ -1378,6 +1397,18 @@ a :kernel parameter, that will be passed to
   (cond
    ((string= interp "ipython")
     (ob-jupyter-setup-inferior-ipython inf-buffer))))
+
+(defun ob-jupyter-cleanup-session (session)
+  "Remove SESSION from internal alists and finalize the kernel."
+  (let ((kernel (cdr (assoc session ob-jupyter-session-kernels-alist))))
+    (setq ob-jupyter-session-kernels-alist
+          (ob-jupyter-assoc-delete-all
+           session ob-jupyter-session-kernels-alist)
+          ob-jupyter-session-langs-alist
+          (ob-jupyter-assoc-delete-all
+           session ob-jupyter-session-langs-alist))
+    (ob-jupyter-assoc-delete-all session ob-jupyter-session-langs-alist)
+    (ob-jupyter-finalize-kernel kernel)))
 
 ;; Python specific
 
