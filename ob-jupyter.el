@@ -818,6 +818,26 @@ Returns an alist like:
   (format "%s: %s" (cdr (assoc 'ename error-alist))
           (cdr (assoc 'evalue error-alist))))
 
+(defun ob-jupyter-raise-error-maybe (execute-reply-alist)
+  "Raise an Emacs error from EXECUTE-REPLY-ALIST if appropriate.
+
+If the error contains a traceback, attempt to display that
+traceback in another window.
+
+Return EXECUTE-REPLY-ALIST unchanged if no error."
+  (let ((status (ob-jupyter-status execute-reply-alist))
+        (tb-buffer (ob-jupyter-error-traceback-buffer
+                    (ob-jupyter-error execute-reply-alist))))
+    (cond
+     ((string= status "ok") execute-reply-alist)
+     ((string= status "error")
+      (when tb-buffer
+        (display-buffer tb-buffer 'display-in-other-window))
+      (error (ob-jupyter-error-string
+              (ob-jupyter-error execute-reply-alist))))
+     ((string= status "abort")
+      (error "Kernel execution aborted")))))
+
 (defun ob-jupyter-inspect-text (inspect-reply-alist)
   "Extract the plaintext description from INSPECT-REPLY-ALIST."
   (->> inspect-reply-alist
@@ -1260,6 +1280,63 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
       (run-hook-with-args
        (intern (format "ob-jupyter-%s-edit-prep-hook" lang))
        babel-info))))
+
+(defun org-babel-variable-assignments:jupyter (params)
+  "Return variable assignment statements according to PARAMS.
+
+PARAMS must include a :session parameter associated with an
+active kernel, to determine the underlying expansion language."
+  (let* ((session (cdr (assq :session params)))
+         (lang (cdr (assoc session ob-jupyter-session-langs-alist)))
+         (var-fn (intern (format "org-babel-variable-assignments:%s" lang)))
+         (var-fn (if (fboundp var-fn) var-fn #'ignore)))
+    (if (not lang)
+        (error "No kernel language for variable assignment")
+      (funcall var-fn params))))
+
+(defun org-babel-expand-body:jupyter (body params &optional var-lines)
+  "Expand BODY according to PARAMS.
+
+PARAMS must include a :session parameter associated with an
+active kernel, to determine the underlying expansion language.
+
+If provided, include VAR-LINES before BODY."
+  (let* ((session (cdr (assq :session params)))
+         (lang (cdr (assoc session ob-jupyter-session-langs-alist)))
+         (expand-fn (intern (format "org-babel-expand-body:%s" lang)))
+         (expand-fn (if (fboundp expand-fn)
+                        expand-fn
+                      #'org-babel-expand-body:generic)))
+    (if (not lang)
+        (error "No kernel language for code expansion")
+      (funcall expand-fn body params var-lines))))
+
+(defun org-babel-execute:jupyter (body params)
+  "Execute the BODY of an Org Babel Jupyter src block.
+
+PARAMS are the Org Babel parameters associated with the block."
+  (let* ((session (cdr (assq :session params)))
+         (kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
+         (var-lines (org-babel-variable-assignments:jupyter params))
+         (code (org-babel-expand-body:jupyter body params var-lines))
+         (result-params (cdr (assq :result-params params)))
+         (extract-fn (ob-jupyter-babel-extract-fn params))
+         (src-buf (current-buffer))
+         (src-point (point)))
+    (if (not kernel)
+        (error "No running kernel to execute src block")
+      (deferred:$
+        (deferred:callback-post
+          (ob-jupyter-execute-deferred kernel code))
+        (deferred:nextc it #'ob-jupyter-raise-error-maybe)
+        (deferred:nextc it extract-fn)
+        (deferred:nextc it
+          (lambda (result)
+            (with-current-buffer src-buf
+              (save-excursion
+                (goto-char src-point)
+                (org-babel-insert-result result result-params))))))
+      "*")))
 
 ;;; This function is expected to return the session buffer.
 ;;; It functions more like -acquire-session (in the RAII sense).
