@@ -1031,5 +1031,11 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
 
 ;;; Emacs
 
+;; Minor Mode
+
+(define-minor-mode ob-jupyter-mode
+  "Utilities for working with connected Jupyter kernels."
+  nil " Jupyter" nil)
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
