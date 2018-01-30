@@ -531,19 +531,19 @@ Returns an `jupyter-struct'."
 
 ;; Low level
 
-(defun ob-jupyter-recv-message (socket)
+(defun jupyter--recv-message (socket)
   "Read a Jupyter protocol message from 0MQ SOCKET.
 
 Returns a list of elements of the message."
   (zmq-receive-multi jupyter-zmq-max-recv socket))
 
-(defun ob-jupyter-send-message (socket msg)
+(defun jupyter--send-message (socket msg)
   "Send Jupyter protocol MSG to 0MQ SOCKET.
 
 MSG is a list of elements of the message."
   (zmq-send-multi msg socket))
 
-(defun ob-jupyter-poll-deferred (socket &optional timeout)
+(defun jupyter--poll-deferred (socket &optional timeout)
   "Defer polling SOCKET until a reply is ready.
 
 If TIMEOUT is not nil, will time out after TIMEOUT msec.
@@ -912,7 +912,7 @@ Block until the send completes."
        (ob-jupyter-validate-alist)
        (ob-jupyter-msg-parts-from-alist)
        (ob-jupyter-signed-message-from-parts key nil)
-       (ob-jupyter-send-message socket)))
+       (jupyter--send-message socket)))
 
 (defun ob-jupyter-recv-alist-sync (socket &optional key)
   "Receive a Jupyter reply alist from SOCKET.
@@ -920,7 +920,7 @@ Block until the send completes."
 If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
 
 Block until the receive completes."
-  (->> (ob-jupyter-recv-message socket)
+  (->> (jupyter--recv-message socket)
        (ob-jupyter-authenticate-message key)
        (ob-jupyter-alist-from-message)))
 
@@ -957,7 +957,7 @@ Returns a deferred object that can be chained with `deferred:$'."
     (deferred:lambda (results)
       (deferred:$
         (deferred:callback-post
-          (ob-jupyter-poll-deferred socket timeout))
+          (jupyter--poll-deferred socket timeout))
         (deferred:set-next it
           (ob-jupyter-recv-alist-deferred socket key))
         (deferred:nextc it
