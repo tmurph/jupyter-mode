@@ -1037,5 +1037,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil)
 
+;; Company Completion
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
