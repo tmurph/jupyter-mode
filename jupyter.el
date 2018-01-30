@@ -1155,12 +1155,11 @@ IGNORED is not used."
         (code (buffer-substring-no-properties (point-min) (point))))
     (cl-case command
       (interactive (company-begin-backend 'company-jupyter))
-      (prefix (and
-               jupyter-mode
-               (not (company-in-string-or-comment))
-               (cons :async
-                     (apply-partially #'jupyter--company-prefix-async
-                                      kernel pos code))))
+      (prefix (and jupyter-mode kernel
+                   (not (company-in-string-or-comment))
+                   (cons :async
+                         (apply-partially #'jupyter--company-prefix-async
+                                          kernel pos code))))
       (candidates (cons :async
                         (apply-partially
                          #'jupyter--company-candidates-async
