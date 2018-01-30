@@ -1,11 +1,11 @@
-;;; test-ob-jupyter --- Unit tests for ob-jupyter library
+;;; test-jupyter --- Unit tests for the Jupyter library
 
 ;;; Commentary:
 ;; Every library needs a test suite.
 
 ;;; Code:
 (require 'ert)
-(require 'ob-jupyter)
+(require 'jupyter)
 
 (defmacro ert-deftest-parametrize (prefix params values &rest body)
   "Create ERT deftests from a list of parameters.
@@ -563,5 +563,5 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                     alist file-name output-dir file-ext)
                    expected-name))))
 
-(provide 'test-ob-jupyter)
-;;; test-ob-jupyter.el ends here
+(provide 'test-jupyter)
+;;; test-jupyter.el ends here

@@ -1,10 +1,9 @@
-;;; ob-jupyter.el --- org-babel functions for Jupyter frontend  -*- lexical-binding: t; -*-
+;;; jupyter.el --- interact with Jupyter kernels  -*- lexical-binding: t; -*-
 
 ;; Author: Trevor Murphy <trevor.m.murphy@gmail.com>
 ;; Maintainer: Trevor Murphy <trevor.m.murphy@gmail.com>
 ;; Version: 0.1.0
-;; Keywords: literate programming, reproducible research
-;; URL: https://github.com/tmurph/ob-jupyter
+;; URL: https://github.com/tmurph/jupyter-mode
 ;; Package-Requires: (company deferred dash emacs-ffi)
 
 ;; This file is not part of GNU Emacs.
@@ -28,11 +27,27 @@
 
 ;;; Commentary:
 
-;; Org-Babel support for working with Jupyter servers.  This library
-;; aims to make Emacs a full-fledged Jupyter client.
+;; Jupyter Minor Mode aims to make Emacs a full-fledged Jupyter client.
+;; The mode provides commands to inspect available kernels, start
+;; inferior kernel processes, and connect buffers to existing processes.
 
+;; This library also includes `ob-jupyter.el', Org-Babel support for
+;; communicating with Jupyter kernels.
+;;
 ;; Enable with
 ;;   (add-to-list 'org-src-lang-modes '("jupyter" . fundamental))
+;;
+;; The library will take care of setting up Org Source buffers with the
+;; appropriate kernel language.
+
+;; This library also includes `company-jupyter.el', support for
+;; completion with Company.
+;;
+;; Enable with
+;;   (add-to-list 'company-backends 'company-jupyter)
+;;
+;; Completion will only work in a buffer when Jupyter minor mode is
+;; active and the buffer has an associated inferior kernel process.
 
 ;; Much of the ZMQ FFI code has been copied without changes from John
 ;; Kitchin's work here:
@@ -1438,5 +1453,5 @@ kernel buffer associated with :session in BABEL-INFO."
     (with-current-buffer inf-buffer
       (inferior-python-mode))))
 
-(provide 'ob-jupyter)
-;;; ob-jupyter.el ends here
+(provide 'jupyter)
+;;; jupyter.el ends here

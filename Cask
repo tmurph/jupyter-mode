@@ -2,7 +2,7 @@
 (source melpa)
 (source gnu)
 
-(package-file "ob-jupyter.el")
+(package-file "jupyter.el")
 
 (development
  (depends-on "f")
