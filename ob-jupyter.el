@@ -62,6 +62,9 @@ the packages that use it, e.g. jupyter servers and clients.
 For full details see
 http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
+(defconst ob-jupyter-zmq-max-recv (expt 2 17)
+  "The size, in bytes, allocated to read ZMQ messages.")
+
 ;; External Definitions
 
 (autoload 'org-id-uuid "org-id")
@@ -479,8 +482,7 @@ Returns an `ob-jupyter-struct'."
   "Read a Jupyter protocol message from 0MQ SOCKET.
 
 Returns a list of elements of the message."
-  (let ((max-len 4096))
-    (zmq-receive-multi max-len socket)))
+  (zmq-receive-multi ob-jupyter-zmq-max-recv socket))
 
 (defun ob-jupyter-send-message (socket msg)
   "Send Jupyter protocol MSG to 0MQ SOCKET.
