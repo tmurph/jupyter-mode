@@ -1100,5 +1100,14 @@ IGNORED is not used."
 
 ;; Babel
 
+(defun ob-jupyter-babel-output (execute-reply-alist)
+  "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'output.
+
+Currently this returns the contents of the \"stdout\" stream."
+  (->> execute-reply-alist
+       (ob-jupyter-stream)
+       (assoc 'text)                    ; assume it's all stdout
+       (cdr)))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here

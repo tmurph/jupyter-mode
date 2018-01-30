@@ -427,5 +427,15 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ob-jupyter-matches alist)
                    expected-lst))))
 
+(ert-deftest ob-jupyter-babel-output ()
+  "Does `ob-jupyter-babel-output' parse execute reply alists?"
+  (let ((alist '((iopub
+                  ((header (msg_type . "stream"))
+                   (content
+                    (name . "stdout")
+                    (text . "contents"))))))
+        (expected "contents"))
+    (should (equal (ob-jupyter-babel-output alist) expected))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
