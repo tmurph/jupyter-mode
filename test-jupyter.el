@@ -39,7 +39,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (eql ZMQ-DEALER 5))
   (should (eql ZMQ-SUBSCRIBE 6)))
 
-(ert-deftest-parametrize ob-jupyter-hmac
+(ert-deftest-parametrize jupyter-hmac
   (key message-contents expected-hash)
   (("" ""
     "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad")
@@ -52,7 +52,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "{}"
      "{\"execution_state\":\"busy\"}")
     "ad2ecf0031e4176cf0e41d8093ad2562c4ffbf65e37febb737b6a1ae768adaa0"))
-  (should (string= (ob-jupyter-hmac-sha256 message-contents key)
+  (should (string= (jupyter--hmac-sha256 message-contents key)
                    expected-hash)))
 
 (ert-deftest-parametrize ob-jupyter-msg-auth

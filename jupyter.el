@@ -400,31 +400,31 @@ Returns a list of the various parts."
 
 ;; Authentication
 
-(defun ob-jupyter-strings-to-unibyte (strings)
+(defun jupyter--strings-to-unibyte (strings)
   "Convert STRINGS to UTF8 unibyte strings."
   (let (ret)
     (dolist (s strings (nreverse ret))
       (push (encode-coding-string s 'utf-8 t) ret))))
 
-(defun ob-jupyter-hash-to-string (bytestring)
+(defun jupyter--hash-to-string (bytestring)
   "Convert BYTESTRING to ascii string of hex digits."
   (let (ret)
     (dolist (c (string-to-list bytestring)
                (apply #'concat (nreverse ret)))
       (push (format "%02x" c) ret))))
 
-(defun ob-jupyter-sha256 (object)
+(defun jupyter--sha256 (object)
   "Hash OBJECT with the sha256 algorithm."
   (secure-hash 'sha256 object nil nil t))
 
-(define-hmac-function ob-jupyter-hmac-sha256
-  ob-jupyter-sha256 64 32)
+(define-hmac-function jupyter--hmac-sha256
+  jupyter--sha256 64 32)
 
-(advice-add 'ob-jupyter-hmac-sha256 :filter-args
-            #'ob-jupyter-strings-to-unibyte)
+(advice-add 'jupyter--hmac-sha256 :filter-args
+            #'jupyter--strings-to-unibyte)
 
-(advice-add 'ob-jupyter-hmac-sha256 :filter-return
-            #'ob-jupyter-hash-to-string)
+(advice-add 'jupyter--hmac-sha256 :filter-return
+            #'jupyter--hash-to-string)
 
 ;; Process Management
 
@@ -564,14 +564,14 @@ Returns a deferred object that can be chained with `deferred:$'."
 
 Returns MSG unchanged if it authenticates.
 
-Uses `ob-jupyter-hmac-sha256' to authenticate."
+Uses `jupyter--hmac-sha256' to authenticate."
   (let ((orig-msg msg)
         hmac rest)
     (while (and msg (not (string= jupyter-delim (pop msg)))))
     (setq hmac (pop msg)
           rest (apply #'concat msg))
     (unless (or (string= hmac "")
-                (string= hmac (ob-jupyter-hmac-sha256 rest key)))
+                (string= hmac (jupyter--hmac-sha256 rest key)))
       (error (concat "Message failed to authenticate!\n"
                      "  msg: %.70s") msg))
     orig-msg))
@@ -650,7 +650,7 @@ message before returning."
       (dolist (elt id-parts) (push elt ret)))
     (push jupyter-delim ret)
     (if (and key (not (string= key "")))
-        (push (ob-jupyter-hmac-sha256 (apply #'concat msg-parts) key) ret)
+        (push (jupyter--hmac-sha256 (apply #'concat msg-parts) key) ret)
       (push "" ret))
     (dolist (elt msg-parts) (push elt ret))
     (nreverse ret)))
