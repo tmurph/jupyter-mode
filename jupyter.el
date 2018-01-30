@@ -559,7 +559,7 @@ Returns a deferred object that can be chained with `deferred:$'."
 
 ;; Mid level
 
-(defun ob-jupyter-authenticate-message (key msg)
+(defun jupyter--authenticate-message (key msg)
   "Error if MSG does not authenticate with and KEY.
 
 Returns MSG unchanged if it authenticates.
@@ -576,7 +576,7 @@ Uses `jupyter--hmac-sha256' to authenticate."
                      "  msg: %.70s") msg))
     orig-msg))
 
-(defun ob-jupyter-validate-header-alist (alist)
+(defun jupyter--validate-header-alist (alist)
   "Error if ALIST is not a valid Jupyter protocol header section."
   (let ((keys '(msg_id username session date msg_type version))
         value)
@@ -590,24 +590,24 @@ Uses `jupyter--hmac-sha256' to authenticate."
                        "  key: %s\n"
                        "  value: %s") key value)))))
 
-(defun ob-jupyter-validate-parent_header-alist (alist)
+(defun jupyter--validate-parent_header-alist (alist)
   "Error if ALIST is not a valid Jupyter protocol parent_header section."
   (when alist
-    (ob-jupyter-validate-header-alist alist)))
+    (jupyter--validate-header-alist alist)))
 
-(defun ob-jupyter-validate-metadata-alist (alist)
+(defun jupyter--validate-metadata-alist (alist)
   "Error if ALIST is not a valid Jupyter protocol metadata section."
   (unless (json-encode-alist alist)
     (error (concat "Metadata is not a valid alist!\n"
                    "  meta: %.70s") alist)))
 
-(defun ob-jupyter-validate-content-alist (alist)
+(defun jupyter--validate-content-alist (alist)
   "Error if ALIST is not a valid Jupyter protocol content section."
   (unless (json-encode-alist alist)
     (error (concat "Content is not a valid alist!\n"
                    "  content: %.70s") alist)))
 
-(defun ob-jupyter-validate-alist (alist)
+(defun jupyter--validate-alist (alist)
   "Error if ALIST is not a valid Jupyter protocol representation.
 
 Returns alist unchanged if it is valid.
@@ -631,11 +631,11 @@ For additional details, see http://jupyter-client.readthedocs.io/en/latest/messa
   (let ((keys '(header parent_header metadata content)))
     (dolist (key keys alist)
       (funcall (symbol-function (intern (format
-                                         "ob-jupyter-validate-%s-alist"
+                                         "jupyter--validate-%s-alist"
                                          key)))
                (cdr (assq key alist))))))
 
-(defun ob-jupyter-signed-message-from-parts (key id-parts msg-parts)
+(defun jupyter--signed-message-from-parts (key id-parts msg-parts)
   "Create a signed Jupyter protocol message from KEY, ID-PARTS, and MSG-PARTS.
 
 ID-PARTS may be nil, a single string ident, or a list of string
@@ -655,7 +655,7 @@ message before returning."
     (dolist (elt msg-parts) (push elt ret))
     (nreverse ret)))
 
-(defun ob-jupyter-alist-from-message (msg)
+(defun jupyter--alist-from-message (msg)
   "Convert Jupyter protocol MSG (in list-of-json-str form) to alist."
   (let ((keys '(header parent_header metadata content))
         key json-str ret)
@@ -666,21 +666,21 @@ message before returning."
       (push (cons key (json-read-from-string json-str)) ret))
     (nreverse ret)))
 
-(defun ob-jupyter-msg-parts-from-alist (alist)
+(defun jupyter--msg-parts-from-alist (alist)
   "Convert Jupyter protocol ALIST to lists of json str."
   (let ((keys '(header parent_header metadata content))
         ret)
     (dolist (key keys (nreverse ret))
       (push (json-encode-alist (cdr (assq key alist))) ret))))
 
-(defun ob-jupyter-msg-type-from-alist (alist)
+(defun jupyter--msg-type-from-alist (alist)
   "Extract the \"msg_type\" value from Jupyter protocol ALIST."
   (->> alist
        (assoc 'header)
        (assoc 'msg_type)
        (cdr)))
 
-(defun ob-jupyter-default-header (msg_type &optional session)
+(defun jupyter--default-header (msg_type &optional session)
   "Create a Jupyter protocol header alist of type MSG_TYPE.
 
 If SESSION is provided, use that as the session value.
@@ -692,16 +692,16 @@ Otherwise, generate a new session UUID."
     (msg_type . ,msg_type)
     (version . ,jupyter-protocol-version)))
 
-(defun ob-jupyter-kernel-info-request-alist ()
+(defun jupyter--kernel-info-request-alist ()
   "Return a Jupyter protocol request for kernel info."
-  `((header ,@(ob-jupyter-default-header "kernel_info_request"))
+  `((header ,@(jupyter--default-header "kernel_info_request"))
     (parent_header)
     (metadata)
     (content)))
 
-(defun ob-jupyter-execute-request-alist (code)
+(defun jupyter--execute-request-alist (code)
   "Return a Jupyter protocol request to execute CODE."
-  `((header ,@(ob-jupyter-default-header "execute_request"))
+  `((header ,@(jupyter--default-header "execute_request"))
     (parent_header)
     (metadata)
     (content
@@ -712,9 +712,9 @@ Otherwise, generate a new session UUID."
      (allow_stdin . :json-false)
      (stop_on_error . t))))
 
-(defun ob-jupyter-inspect-request-alist (pos code)
+(defun jupyter--inspect-request-alist (pos code)
   "Return a Jupyter protocol request to inspect the object at POS in CODE."
-  `((header ,@(ob-jupyter-default-header "inspect_request"))
+  `((header ,@(jupyter--default-header "inspect_request"))
     (parent_header)
     (metadata)
     (content
@@ -722,26 +722,26 @@ Otherwise, generate a new session UUID."
      (cursor_pos . ,pos)
      (detail_level . 0))))
 
-(defun ob-jupyter-complete-request-alist (pos code)
+(defun jupyter--complete-request-alist (pos code)
   "Return a Jupyter protocol request to complete the CODE at POS."
-  `((header ,@(ob-jupyter-default-header "complete_request"))
+  `((header ,@(jupyter--default-header "complete_request"))
     (parent_header)
     (metadata)
     (content
      (code . ,code)
      (cursor_pos . ,pos))))
 
-(defun ob-jupyter-shutdown-request-alist (&optional restart)
+(defun jupyter--shutdown-request-alist (&optional restart)
   "Return a Jupyter protocol request to shut down the kernel.
 
 If RESTART, restart the kernel after the shutdown."
-  `((header ,@(ob-jupyter-default-header "shutdown_request"))
+  `((header ,@(jupyter--default-header "shutdown_request"))
     (parent_header)
     (metadata)
     (content
      (restart . ,(if restart t :json-false)))))
 
-(defun ob-jupyter-iopub-last-p (alist)
+(defun jupyter--iopub-last-p (alist)
   "Return t if ALIST is the last expected message on the IOPub channel."
   (->> alist
        (assq 'content)
@@ -749,7 +749,7 @@ If RESTART, restart the kernel after the shutdown."
        cdr
        (string= "idle")))
 
-(defun ob-jupyter-shell-last-p (alist)
+(defun jupyter--shell-last-p (alist)
   "Return t if ALIST is the last expected message on the Shell channel."
   (->> alist
        (assq 'header)
@@ -757,90 +757,90 @@ If RESTART, restart the kernel after the shutdown."
        cdr
        (string-match-p "reply\\'")))
 
-(defun ob-jupyter-shell-content-from-alist (reply-alist)
+(defun jupyter--shell-content-from-alist (reply-alist)
   "Extract the \"content\" alist from the \"shell\" part of REPLY-ALIST."
   (->> reply-alist
        (assoc 'shell)
        (cadr)       ; assume shell reply is a list with just one message
        (assoc 'content)))
 
-(defun ob-jupyter-iopub-content-from-alist (msg-type reply-alist)
+(defun jupyter--iopub-content-from-alist (msg-type reply-alist)
   "Extract the \"content\" alist from the first IOPub message of type MSG-TYPE in REPLY-ALIST."
   (let ((rest (cdr (assoc 'iopub reply-alist)))
         alist result)
     (while (and rest (not result))
       (setq alist (car rest)
             rest (cdr rest))
-      (when (string= msg-type (ob-jupyter-msg-type-from-alist alist))
+      (when (string= msg-type (jupyter--msg-type-from-alist alist))
         (setq result alist)))
     (assoc 'content result)))
 
-(defun ob-jupyter-language (kernel-info-reply-alist)
+(defun jupyter--language (kernel-info-reply-alist)
   "Extract the kernel language from KERNEL-INFO-REPLY-ALIST."
   (->> kernel-info-reply-alist
-       (ob-jupyter-shell-content-from-alist)
+       (jupyter--shell-content-from-alist)
        (assoc 'language_info)
        (assoc 'name)
        (cdr)))
 
-(defun ob-jupyter-implementation (kernel-info-reply-alist)
+(defun jupyter--implementation (kernel-info-reply-alist)
   "Extract the kernel implementation from KERNEL-INFO-REPLY-ALIST."
   (->> kernel-info-reply-alist
-       (ob-jupyter-shell-content-from-alist)
+       (jupyter--shell-content-from-alist)
        (assoc 'implementation)
        (cdr)))
 
-(defun ob-jupyter-status (execute-reply-alist)
+(defun jupyter--status (execute-reply-alist)
   "Extract the execution status from EXECUTE-REPLY-ALIST.
 
 Returns a string, either \"ok\", \"abort\", or \"error\"."
   (->> execute-reply-alist
-       (ob-jupyter-shell-content-from-alist)
+       (jupyter--shell-content-from-alist)
        (assoc 'status)
        (cdr)))
 
-(defun ob-jupyter-execute-result (execute-reply-alist)
+(defun jupyter--execute-result (execute-reply-alist)
   "Extract the IOPub \"execute_result\" from EXECUTE-REPLY-ALIST.
 
 Returns an alist of mimetypes and contents, so like:
  \((text/plain . \"this is always here\")
   \(text/html . \"maybe this is here\"))"
   (->> execute-reply-alist
-       (ob-jupyter-iopub-content-from-alist "execute_result")
+       (jupyter--iopub-content-from-alist "execute_result")
        (assoc 'data)
        (cdr)))
 
-(defun ob-jupyter-stream (execute-reply-alist)
+(defun jupyter--stream (execute-reply-alist)
   "Extract the IOPub \"stream\" from EXECUTE-REPLY-ALIST.
 
 Returns an alist of stream data like:
  \((name . \"stdout\")
   \(text . \"contents\"))"
   (->> execute-reply-alist
-       (ob-jupyter-iopub-content-from-alist "stream")
+       (jupyter--iopub-content-from-alist "stream")
        (cdr)))
 
-(defun ob-jupyter-display-data (execute-reply-alist)
+(defun jupyter--display-data (execute-reply-alist)
   "Extract the IOPub \"display_data\" from EXECUTE-REPLY-ALIST.
 
 Returns an alist of mimetypes and contents, so like:
  \((text/plain . \"this is always here\")
   \(image/png . \"base 64 encoded string, maybe\"))"
   (->> execute-reply-alist
-       (ob-jupyter-iopub-content-from-alist "display_data")
+       (jupyter--iopub-content-from-alist "display_data")
        (assoc 'data)
        (cdr)))
 
-(defun ob-jupyter-error (execute-reply-alist)
+(defun jupyter--error (execute-reply-alist)
   "Extract the IOPub \"error\" data from EXECUTE-REPLY-ALIST.
 
 Returns an alist like:
  \((traceback . [\"error tb line 1\" \"error tb line 2\"])
   \(ename . \"error name\")
   \(evalue . \"error value\"))"
-  (cdr (ob-jupyter-iopub-content-from-alist "error" execute-reply-alist)))
+  (cdr (jupyter--iopub-content-from-alist "error" execute-reply-alist)))
 
-(defun ob-jupyter-error-traceback-buffer (error-alist)
+(defun jupyter--error-traceback-buffer (error-alist)
   "Create a buffer with the traceback from ERROR-ALIST."
   (let ((buf (get-buffer-create "*ob-jupyter-traceback*"))
         (tb (cdr (assoc 'tracback error-alist))))
@@ -851,50 +851,50 @@ Returns an alist like:
             tb)
       (current-buffer))))
 
-(defun ob-jupyter-error-string (error-alist)
+(defun jupyter--error-string (error-alist)
   "Format ERROR-ALIST to a string."
   (format "%s: %s" (cdr (assoc 'ename error-alist))
           (cdr (assoc 'evalue error-alist))))
 
-(defun ob-jupyter-raise-error-maybe (execute-reply-alist)
+(defun jupyter--raise-error-maybe (execute-reply-alist)
   "Raise an Emacs error from EXECUTE-REPLY-ALIST if appropriate.
 
 If the error contains a traceback, attempt to display that
 traceback in another window.
 
 Return EXECUTE-REPLY-ALIST unchanged if no error."
-  (let ((status (ob-jupyter-status execute-reply-alist))
-        (tb-buffer (ob-jupyter-error-traceback-buffer
-                    (ob-jupyter-error execute-reply-alist))))
+  (let ((status (jupyter--status execute-reply-alist))
+        (tb-buffer (jupyter--error-traceback-buffer
+                    (jupyter--error execute-reply-alist))))
     (cond
      ((string= status "ok") execute-reply-alist)
      ((string= status "error")
       (when tb-buffer
         (display-buffer tb-buffer 'display-in-other-window))
-      (error (ob-jupyter-error-string
-              (ob-jupyter-error execute-reply-alist))))
+      (error (jupyter--error-string
+              (jupyter--error execute-reply-alist))))
      ((string= status "abort")
       (error "Kernel execution aborted")))))
 
-(defun ob-jupyter-inspect-text (inspect-reply-alist)
+(defun jupyter--inspect-text (inspect-reply-alist)
   "Extract the plaintext description from INSPECT-REPLY-ALIST."
   (->> inspect-reply-alist
-       (ob-jupyter-shell-content-from-alist)
+       (jupyter--shell-content-from-alist)
        (assoc 'data)
        (assoc 'text/plain)
        (cdr)))
 
-(defun ob-jupyter-cursor-pos (complete-reply-alist)
+(defun jupyter--cursor-pos (complete-reply-alist)
   "Extract a cons like (CURSOR_START . CURSOR_END) from COMPLETE-REPLY-ALIST."
-  (let* ((content (ob-jupyter-shell-content-from-alist
+  (let* ((content (jupyter--shell-content-from-alist
                    complete-reply-alist))
          (cursor-end (cdr (assoc 'cursor_end content)))
          (cursor-start (cdr (assoc 'cursor_start content))))
     (cons cursor-start cursor-end)))
 
-(defun ob-jupyter-matches (complete-reply-alist)
+(defun jupyter--matches (complete-reply-alist)
   "Extract the list of completions from COMPLETE-REPLY-ALIST."
-  (let* ((content (ob-jupyter-shell-content-from-alist
+  (let* ((content (jupyter--shell-content-from-alist
                    complete-reply-alist))
          (matches-vector (cdr (assoc 'matches content)))
          (matches-lst (append matches-vector nil)))
@@ -909,9 +909,9 @@ If KEY is provided, sign messages with HMAC-SHA256 and KEY.
 
 Block until the send completes."
   (->> alist
-       (ob-jupyter-validate-alist)
-       (ob-jupyter-msg-parts-from-alist)
-       (ob-jupyter-signed-message-from-parts key nil)
+       (jupyter--validate-alist)
+       (jupyter--msg-parts-from-alist)
+       (jupyter--signed-message-from-parts key nil)
        (jupyter--send-message socket)))
 
 (defun ob-jupyter-recv-alist-sync (socket &optional key)
@@ -921,8 +921,8 @@ If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
 
 Block until the receive completes."
   (->> (jupyter--recv-message socket)
-       (ob-jupyter-authenticate-message key)
-       (ob-jupyter-alist-from-message)))
+       (jupyter--authenticate-message key)
+       (jupyter--alist-from-message)))
 
 (defun ob-jupyter-send-alist-deferred (alist socket &optional key)
   "Defer sending a Jupyter request ALIST to SOCKET.
@@ -994,11 +994,11 @@ Returns a deferred object that can be chained with `deferred:$'."
         `((shell . ,(deferred:callback-post
                       (ob-jupyter-recv-all-deferred
                        shell-socket
-                       #'ob-jupyter-shell-last-p key timeout)))
+                       #'jupyter--shell-last-p key timeout)))
           (iopub . ,(deferred:callback-post
                       (ob-jupyter-recv-all-deferred
                        io-socket
-                       #'ob-jupyter-iopub-last-p key timeout))))))))
+                       #'jupyter--iopub-last-p key timeout))))))))
 
 (defun ob-jupyter-roundtrip-deferred (alist kernel &optional timeout)
   "Defer a Jupyter roundtrip request / reply pattern.
@@ -1026,7 +1026,7 @@ receive on that socket takes longer that TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (ob-jupyter-roundtrip-deferred
-   (ob-jupyter-kernel-info-request-alist)
+   (jupyter--kernel-info-request-alist)
    kernel timeout))
 
 (defun ob-jupyter-execute-deferred (kernel code &optional timeout)
@@ -1040,7 +1040,7 @@ msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (ob-jupyter-roundtrip-deferred
-   (ob-jupyter-execute-request-alist code)
+   (jupyter--execute-request-alist code)
    kernel timeout))
 
 (defun ob-jupyter-inspect-deferred (kernel pos code &optional timeout)
@@ -1053,7 +1053,7 @@ any receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (ob-jupyter-roundtrip-deferred
-   (ob-jupyter-inspect-request-alist pos code)
+   (jupyter--inspect-request-alist pos code)
    kernel timeout))
 
 (defun ob-jupyter-complete-deferred (kernel pos code &optional timeout)
@@ -1066,7 +1066,7 @@ any receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (ob-jupyter-roundtrip-deferred
-   (ob-jupyter-complete-request-alist pos code)
+   (jupyter--complete-request-alist pos code)
    kernel timeout))
 
 ;;; wtf? why doesn't this actually shut things down?
@@ -1082,7 +1082,7 @@ any receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (ob-jupyter-roundtrip-deferred
-   (ob-jupyter-shutdown-request-alist restart)
+   (jupyter--shutdown-request-alist restart)
    kernel timeout))
 
 ;; Debug
@@ -1116,7 +1116,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   (deferred:$
     (deferred:callback-post
       (ob-jupyter-complete-deferred kernel pos code))
-    (deferred:nextc it #'ob-jupyter-cursor-pos)
+    (deferred:nextc it #'jupyter--cursor-pos)
     (deferred:nextc it
       (lambda (cursor-cons)
         (substring-no-properties
@@ -1128,7 +1128,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   (deferred:$
     (deferred:callback-post
       (ob-jupyter-complete-deferred kernel pos code 1000))
-    (deferred:nextc it #'ob-jupyter-matches)
+    (deferred:nextc it #'jupyter--matches)
     (deferred:nextc it callback)))
 
 (defun ob-jupyter-company-doc-buffer-async (kernel pos code callback)
@@ -1136,7 +1136,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   (deferred:$
     (deferred:callback-post
       (ob-jupyter-inspect-deferred kernel pos code 1000))
-    (deferred:nextc it #'ob-jupyter-inspect-text)
+    (deferred:nextc it #'jupyter--inspect-text)
     (deferred:nextc it #'company-doc-buffer)
     (deferred:nextc it callback)))
 
@@ -1179,14 +1179,14 @@ IGNORED is not used."
 
 Currently this returns the contents of the \"stdout\" stream."
   (->> execute-reply-alist
-       (ob-jupyter-stream)
+       (jupyter--stream)
        (assoc 'text)                    ; assume it's all stdout
        (cdr)))
 
 (defun ob-jupyter-babel-value (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'value."
   (->> execute-reply-alist
-       (ob-jupyter-execute-result)
+       (jupyter--execute-result)
        (assoc 'text/plain)
        (cdr)))
 
@@ -1206,7 +1206,7 @@ Process first row of data according to COLNAMES:
 Process first column of data according to ROWNAMES:
  - if nil or \"yes\", don't do any row name processing
  - if \"no\", exclude the first column / row names / index column"
-  (let* ((result-alist (ob-jupyter-execute-result execute-reply-alist))
+  (let* ((result-alist (jupyter--execute-result execute-reply-alist))
          (text (cdr (assoc 'text/plain result-alist)))
          (all-rows (split-string text "\n"))
          (row-fn (if (string= rownames "no")
@@ -1241,7 +1241,7 @@ FILE-EXT in OUTPUT-DIR using `make-temp-name'.
 If neither FILE-NAME nor FILE-EXT is provided, generate a file in
 OUTPUT-DIR using `make-temp-name' and the mime types available in
 EXECUTE-REPLY-ALIST.  Prefer png over svg."
-  (let* ((display-alist (ob-jupyter-display-data execute-reply-alist))
+  (let* ((display-alist (jupyter--display-data execute-reply-alist))
          (png-data (cdr (assoc 'image/png display-alist)))
          (svg-data (cdr (assoc 'image/svg+xml display-alist))))
     (unless file-ext
@@ -1370,7 +1370,7 @@ PARAMS are the Org Babel parameters associated with the block."
       (deferred:$
         (deferred:callback-post
           (ob-jupyter-execute-deferred kernel code))
-        (deferred:nextc it #'ob-jupyter-raise-error-maybe)
+        (deferred:nextc it #'jupyter--raise-error-maybe)
         (deferred:nextc it extract-fn)
         (deferred:nextc it
           (lambda (result)
@@ -1397,13 +1397,13 @@ a :kernel parameter, that will be passed to
       (deferred:$
         (deferred:callback-post
           (ob-jupyter-kernel-info-deferred kernel))
-        (deferred:nextc it #'ob-jupyter-language)
+        (deferred:nextc it #'jupyter--language)
         (deferred:nextc it
           (lambda (lang)
             (push (cons session lang) ob-jupyter-session-langs-alist)))
         (deferred:set-next it
           (ob-jupyter-kernel-info-deferred kernel))
-        (deferred:nextc it #'ob-jupyter-implementation)
+        (deferred:nextc it #'jupyter--implementation)
         (deferred:nextc it
           (lambda (interpreter)
             (ob-jupyter-setup-inferior

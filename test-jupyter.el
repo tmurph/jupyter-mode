@@ -55,7 +55,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (string= (jupyter--hmac-sha256 message-contents key)
                    expected-hash)))
 
-(ert-deftest-parametrize ob-jupyter-msg-auth
+(ert-deftest-parametrize jupyter-msg-auth
   (key msg)
   (("9c6bbbfb-6ad699d44a15189c4f3d3371"
     '("kernel.7d6d6bc5-babd-4697-9d94-25698a4c86df.status"
@@ -67,10 +67,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       "{\"execution_state\":\"idle\"}"))
    ("any key" '("no hash" "<IDS|MSG>" ""
                 "header" "parent_header" "metadata" "content")))
-  (should (equal (ob-jupyter-authenticate-message key msg)
+  (should (equal (jupyter--authenticate-message key msg)
                  msg)))
 
-(ert-deftest-parametrize ob-jupyter-msg-auth-error
+(ert-deftest-parametrize jupyter-msg-auth-error
   (key msg)
   (("malformed" "input")
    ("malformed" '("input"))
@@ -78,9 +78,9 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
    ("9c6bbbfb-6ad699d44a15189c4f3d3371"
     '("fake-status" "<IDS|MSG>" "not-authenticated"
       "header" "parent_header" "metadata" "content")))
-  (should-error (ob-jupyter-authenticate-message msg key)))
+  (should-error (jupyter--authenticate-message msg key)))
 
-(defun ob-jupyter-default-valid-header ()
+(defun jupyter-default-valid-header ()
   "Return a sample valid header alist."
   '((msg_id . "uuid")
     (username . "me")
@@ -89,17 +89,17 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (msg_type . "type")
     (version . "version")))
 
-(ert-deftest ob-jupyter-validate-msg ()
-  "Does `ob-jupyter-validate-msg' return successfully valid messages?"
+(ert-deftest jupyter-validate-msg ()
+  "Does `jupyter--validate-msg' return successfully valid messages?"
   (let ((valid-msg
-         `((header ,@(ob-jupyter-default-valid-header))
+         `((header ,@(jupyter-default-valid-header))
            (parent_header)
            (metadata)
            (content))))
-    (should (equal (ob-jupyter-validate-alist valid-msg)
+    (should (equal (jupyter--validate-alist valid-msg)
                    valid-msg))))
 
-(ert-deftest-parametrize ob-jupyter-validate-msg-alist-error
+(ert-deftest-parametrize jupyter-validate-msg-alist-error
   (alist)
   (("malformed_input")
    ('((header)
@@ -116,21 +116,21 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       (parent_header)
       (metadata)
       (content)))
-   (`((header ,@(ob-jupyter-default-valid-header))
+   (`((header ,@(jupyter-default-valid-header))
       (parent_header . "malformed")
       (metadata)
       (content)))
-   (`((header ,@(ob-jupyter-default-valid-header))
-      (parent_header ,@(ob-jupyter-default-valid-header))
+   (`((header ,@(jupyter-default-valid-header))
+      (parent_header ,@(jupyter-default-valid-header))
       (metadata . "malformed")
       (content)))
-   (`((header ,@(ob-jupyter-default-valid-header))
+   (`((header ,@(jupyter-default-valid-header))
       (parent_header)
       (metadata (valid . "meta"))
       (content . "malformed"))))
-  (should-error (ob-jupyter-validate-alist alist)))
+  (should-error (jupyter--validate-alist alist)))
 
-(ert-deftest-parametrize ob-jupyter-signed-msg
+(ert-deftest-parametrize jupyter-signed-msg
   (key id-parts msg-parts expected-msg)
   (("e66550e7-bb4ecf567ca2b22868d416e4"
     nil
@@ -146,11 +146,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
           ""
           "header" "parent_header" "metadata" "contents")))
   (should (equal
-           (ob-jupyter-signed-message-from-parts key id-parts msg-parts)
+           (jupyter--signed-message-from-parts key id-parts msg-parts)
            expected-msg)))
 
-(ert-deftest ob-jupyter-alist-from-msg-parse ()
-  "Does `ob-jupyter-alist-from-message' parse messages?"
+(ert-deftest jupyter-alist-from-msg-parse ()
+  "Does `jupyter--alist-from-message' parse messages?"
   (let ((msg
          '("kernel.7d6d6bc5-babd-4697-9d94-25698a4c86df.status"
            "<IDS|MSG>"
@@ -177,11 +177,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            (metadata)
            (content
             (execution_state . "idle")))))
-    (should (equal (ob-jupyter-alist-from-message msg)
+    (should (equal (jupyter--alist-from-message msg)
                    expected-alist))))
 
-(ert-deftest ob-jupyter-msg-from-alist-parse ()
-  "Does `ob-jupyter-msg-parts-from-alist' parse alists?"
+(ert-deftest jupyter-msg-from-alist-parse ()
+  "Does `jupyter--msg-parts-from-alist' parse alists?"
   (let ((alist
          '((header
             (version . "5.2")
@@ -205,11 +205,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            "{\"version\":\"5.2\",\"date\":\"2018-01-15T00:07:10.000000Z\",\"session\":\"c6decad2-18b9-4935-a02e-a66b3c1b4cc4\",\"username\":\"trevor\",\"msg_type\":\"execute_request\",\"msg_id\":\"fcf0b3fd-552d-4f47-b31c-ebf6ecd6a2cc\"}"
            "{}"
            "{\"execution_state\":\"idle\"}")))
-    (should (equal (ob-jupyter-msg-parts-from-alist alist)
+    (should (equal (jupyter--msg-parts-from-alist alist)
                    expected-msg))))
 
-(ert-deftest ob-jupyter-language ()
-  "Does `ob-jupyter-language' parse kernel info reply alists?"
+(ert-deftest jupyter-language ()
+  "Does `jupyter--language' parse kernel info reply alists?"
   (let ((alist
          '((shell
             ((header
@@ -231,11 +231,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (content
               (execution_state . "idle"))))))
         (expected-text "python"))
-    (should (string= (ob-jupyter-language alist)
+    (should (string= (jupyter--language alist)
                      expected-text))))
 
-(ert-deftest ob-jupyter-implementation ()
-  "Does `ob-jupyter-implementaion' parse kernel info reply alists?"
+(ert-deftest jupyter-implementation ()
+  "Does `jupyter--implementaion' parse kernel info reply alists?"
   (let ((alist
          '((shell
             ((header
@@ -256,11 +256,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (content
               (execution_state . "idle"))))))
         (expected-text "ipython"))
-    (should (string= (ob-jupyter-implementation alist)
+    (should (string= (jupyter--implementation alist)
                      expected-text))))
 
-(ert-deftest ob-jupyter-status ()
-  "Does `ob-jupyter-status' parse execute reply alists?"
+(ert-deftest jupyter-status ()
+  "Does `jupyter--status' parse execute reply alists?"
   (let ((alist
          '((shell
             ((header
@@ -281,10 +281,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (content
               (execution_state . "idle"))))))
         (expected-text "ok"))
-    (should (string= (ob-jupyter-status alist)
+    (should (string= (jupyter--status alist)
                      expected-text))))
 
-(ert-deftest-parametrize ob-jupyter-execute-result
+(ert-deftest-parametrize jupyter-execute-result
   (alist expected)
   (('((iopub
        ((header (msg_type . "status"))
@@ -310,10 +310,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
          (data
           (text/plain . "minimal example"))))))
     '((text/plain . "minimal example"))))
-  (should (equal (ob-jupyter-execute-result alist) expected)))
+  (should (equal (jupyter--execute-result alist) expected)))
 
-(ert-deftest ob-jupyter-stream ()
-  "Does `ob-jupyter-stream' parse execution reply alists?"
+(ert-deftest jupyter-stream ()
+  "Does `jupyter--stream' parse execution reply alists?"
   (let ((alist '((iopub
                   ((header (msg_type . "stream"))
                    (content
@@ -321,10 +321,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                     (text . "contents"))))))
         (expected '((name . "stdout")
                     (text . "contents"))))
-    (should (equal (ob-jupyter-stream alist) expected))))
+    (should (equal (jupyter--stream alist) expected))))
 
-(ert-deftest ob-jupyter-display-data ()
-  "Does `ob-jupyter-display-data' parse execution reply alists?"
+(ert-deftest jupyter-display-data ()
+  "Does `jupyter--display-data' parse execution reply alists?"
   (let ((alist '((iopub
                   ((header (msg_type . "display_data"))
                    (content
@@ -333,10 +333,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                      (image/png . "maybe here")))))))
         (expected '((text/plain . "always here")
                     (image/png . "maybe here"))))
-    (should (equal (ob-jupyter-display-data alist) expected))))
+    (should (equal (jupyter--display-data alist) expected))))
 
-(ert-deftest ob-jupyter-error ()
-  "Does `ob-jupyter-error' parse execution reply alists?"
+(ert-deftest jupyter-error ()
+  "Does `jupyter--error' parse execution reply alists?"
   (let ((alist '((iopub
                   ((header (msg_type . "error"))
                    (content
@@ -346,10 +346,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
         (expected '((traceback . ["tb lines"])
                     (ename . "name")
                     (evalue . "value"))))
-    (should (equal (ob-jupyter-error alist) expected))))
+    (should (equal (jupyter--error alist) expected))))
 
-(ert-deftest ob-jupyter-inspect-text ()
-  "Does `ob-jupyter-inspect-text' parse inspect reply alists?"
+(ert-deftest jupyter-inspect-text ()
+  "Does `jupyter--inspect-text' parse inspect reply alists?"
   (let ((alist
          '((shell
             ((header
@@ -371,11 +371,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (content
               (execution_state . "idle"))))))
         (expected-text "Hello World!"))
-    (should (string= (ob-jupyter-inspect-text alist)
+    (should (string= (jupyter--inspect-text alist)
                      expected-text))))
 
-(ert-deftest ob-jupyter-cursor-pos ()
-  "Does `ob-jupyter-cursor-pos' parse complete reply alists?"
+(ert-deftest jupyter-cursor-pos ()
+  "Does `jupyter--cursor-pos' parse complete reply alists?"
   (let ((alist
          '((shell
             ((header
@@ -397,11 +397,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (content
               (execution_state . "idle"))))))
         (expected-cons (cons 0 6)))
-    (should (equal (ob-jupyter-cursor-pos alist)
+    (should (equal (jupyter--cursor-pos alist)
                    expected-cons))))
 
-(ert-deftest ob-jupyter-matches ()
-  "Does `ob-jupyter-matches' parse complete reply alists?"
+(ert-deftest jupyter-matches ()
+  "Does `jupyter--matches' parse complete reply alists?"
   (let ((alist
          '((shell
             ((header
@@ -424,7 +424,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
               (execution_state . "idle"))))))
         (expected-lst '("np.add" "np.add_docstring" "np.add_newdoc"
                         "np.add_newdoc_ufunc" "np.add_newdocs")))
-    (should (equal (ob-jupyter-matches alist)
+    (should (equal (jupyter--matches alist)
                    expected-lst))))
 
 (ert-deftest ob-jupyter-babel-output ()
