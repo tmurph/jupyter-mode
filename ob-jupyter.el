@@ -758,7 +758,9 @@ Returns a deferred object that can be chained with `deferred:$'."
         (deferred:set-next it
           (ob-jupyter-recv-alist-deferred socket key))
         (deferred:nextc it
-          (lambda (alist) (push alist results) alist))
+          (lambda (alist)
+            (push alist results)
+            alist))
         (deferred:set-next it
           (make-deferred
            :callback (lambda (alist)
