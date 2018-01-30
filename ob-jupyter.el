@@ -1109,5 +1109,12 @@ Currently this returns the contents of the \"stdout\" stream."
        (assoc 'text)                    ; assume it's all stdout
        (cdr)))
 
+(defun ob-jupyter-babel-value (execute-reply-alist)
+  "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'value."
+  (->> execute-reply-alist
+       (ob-jupyter-execute-result)
+       (assoc 'text/plain)
+       (cdr)))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
