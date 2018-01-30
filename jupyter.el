@@ -902,7 +902,7 @@ Return EXECUTE-REPLY-ALIST unchanged if no error."
 
 ;; High level API
 
-(defun ob-jupyter-send-alist-sync (alist socket &optional key)
+(defun jupyter--send-alist-sync (alist socket &optional key)
   "Send Jupyter request ALIST to SOCKET.
 
 If KEY is provided, sign messages with HMAC-SHA256 and KEY.
@@ -914,7 +914,7 @@ Block until the send completes."
        (jupyter--signed-message-from-parts key nil)
        (jupyter--send-message socket)))
 
-(defun ob-jupyter-recv-alist-sync (socket &optional key)
+(defun jupyter--recv-alist-sync (socket &optional key)
   "Receive a Jupyter reply alist from SOCKET.
 
 If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
@@ -924,25 +924,25 @@ Block until the receive completes."
        (jupyter--authenticate-message key)
        (jupyter--alist-from-message)))
 
-(defun ob-jupyter-send-alist-deferred (alist socket &optional key)
+(defun jupyter--send-alist-deferred (alist socket &optional key)
   "Defer sending a Jupyter request ALIST to SOCKET.
 
 If KEY is provided, sign messages with HMAC-SHA256 and KEY.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
-    (lambda () (ob-jupyter-send-alist-sync alist socket key))))
+    (lambda () (jupyter--send-alist-sync alist socket key))))
 
-(defun ob-jupyter-recv-alist-deferred (socket &optional key)
+(defun jupyter--recv-alist-deferred (socket &optional key)
   "Defer receiving a Jupyter reply alist from SOCKET.
 
 If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
 
 Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
-    (lambda () (ob-jupyter-recv-alist-sync socket key))))
+    (lambda () (jupyter--recv-alist-sync socket key))))
 
-(defun ob-jupyter-recv-all-deferred (socket last-p &optional key timeout)
+(defun jupyter--recv-all-deferred (socket last-p &optional key timeout)
   "Defer receiving a list of Jupyter reply alists from SOCKET.
 
 Loops until (funcall LAST-P alist) is not nil.
@@ -959,7 +959,7 @@ Returns a deferred object that can be chained with `deferred:$'."
         (deferred:callback-post
           (jupyter--poll-deferred socket timeout))
         (deferred:set-next it
-          (ob-jupyter-recv-alist-deferred socket key))
+          (jupyter--recv-alist-deferred socket key))
         (deferred:nextc it
           (lambda (alist)
             (push alist results)
@@ -972,7 +972,7 @@ Returns a deferred object that can be chained with `deferred:$'."
                          (deferred:next self results)))
            :errorback (lambda () (nreverse results))))))))
 
-(defun ob-jupyter-roundtrip-deferred-1
+(defun jupyter--roundtrip-deferred-1
     (alist shell-socket io-socket &optional key timeout)
   "Defer a Jupyter roundtrip request / reply pattern.
 
@@ -989,18 +989,18 @@ Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (lambda ()
       (deferred:callback-post
-        (ob-jupyter-send-alist-deferred alist shell-socket key))
+        (jupyter--send-alist-deferred alist shell-socket key))
       (deferred:parallel
         `((shell . ,(deferred:callback-post
-                      (ob-jupyter-recv-all-deferred
+                      (jupyter--recv-all-deferred
                        shell-socket
                        #'jupyter--shell-last-p key timeout)))
           (iopub . ,(deferred:callback-post
-                      (ob-jupyter-recv-all-deferred
+                      (jupyter--recv-all-deferred
                        io-socket
                        #'jupyter--iopub-last-p key timeout))))))))
 
-(defun ob-jupyter-roundtrip-deferred (alist kernel &optional timeout)
+(defun jupyter--roundtrip-deferred (alist kernel &optional timeout)
   "Defer a Jupyter roundtrip request / reply pattern.
 
 When fired, send request ALIST to KERNEL and collect the reply.
@@ -1009,14 +1009,14 @@ If TIMEOUT is provided, stop receiving from a socket if any
 receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (ob-jupyter-roundtrip-deferred-1
+  (jupyter--roundtrip-deferred-1
    alist
    (jupyter-struct-shell kernel)
    (jupyter-struct-iopub kernel)
    (jupyter-struct-key kernel)
    timeout))
 
-(defun ob-jupyter-kernel-info-deferred (kernel &optional timeout)
+(defun jupyter--kernel-info-deferred (kernel &optional timeout)
   "Defer a Jupyter kernel info request / reply roundtrip.
 
 When fired, queries KERNEL for basic info.
@@ -1025,11 +1025,11 @@ If TIMEOUT is provided, stop receiving from kernel socket if any
 receive on that socket takes longer that TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (ob-jupyter-roundtrip-deferred
+  (jupyter--roundtrip-deferred
    (jupyter--kernel-info-request-alist)
    kernel timeout))
 
-(defun ob-jupyter-execute-deferred (kernel code &optional timeout)
+(defun jupyter--execute-deferred (kernel code &optional timeout)
   "Defer a Jupyter code execution request / reply roundtrip.
 
 When fired, execute CODE on KERNEL.
@@ -1039,11 +1039,11 @@ socket if any receive on that socket takes longer than TIMEOUT
 msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (ob-jupyter-roundtrip-deferred
+  (jupyter--roundtrip-deferred
    (jupyter--execute-request-alist code)
    kernel timeout))
 
-(defun ob-jupyter-inspect-deferred (kernel pos code &optional timeout)
+(defun jupyter--inspect-deferred (kernel pos code &optional timeout)
   "Defer a Jupyter inspection request / reply roundtrip.
 
 When fired, queries KERNEL for info on the object at POS in CODE.
@@ -1052,11 +1052,11 @@ If TIMEOUT is provided, stop receiving from a kernel socket if
 any receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (ob-jupyter-roundtrip-deferred
+  (jupyter--roundtrip-deferred
    (jupyter--inspect-request-alist pos code)
    kernel timeout))
 
-(defun ob-jupyter-complete-deferred (kernel pos code &optional timeout)
+(defun jupyter--complete-deferred (kernel pos code &optional timeout)
   "Defer a Jupyter completion request / reply roundtrip.
 
 When fired, queries KERNEL for completion info at POS in CODE.
@@ -1065,12 +1065,12 @@ If TIMEOUT is provided, stop receiving from a kernel socket if
 any receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (ob-jupyter-roundtrip-deferred
+  (jupyter--roundtrip-deferred
    (jupyter--complete-request-alist pos code)
    kernel timeout))
 
 ;;; wtf? why doesn't this actually shut things down?
-(defun ob-jupyter-shutdown-deferred (kernel &optional restart timeout)
+(defun jupyter--shutdown-deferred (kernel &optional restart timeout)
   "Defer a Jupyter shutdown request / reply roundtrip.
 
 When fired, ask KERNEL to shutdown.
@@ -1081,7 +1081,7 @@ If TIMEOUT is provided, stop receiving from a kernel socket if
 any receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (ob-jupyter-roundtrip-deferred
+  (jupyter--roundtrip-deferred
    (jupyter--shutdown-request-alist restart)
    kernel timeout))
 
@@ -1115,7 +1115,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   "Query KERNEL for the completion prefix at POS in CODE and pass the result to CALLBACK."
   (deferred:$
     (deferred:callback-post
-      (ob-jupyter-complete-deferred kernel pos code))
+      (jupyter--complete-deferred kernel pos code))
     (deferred:nextc it #'jupyter--cursor-pos)
     (deferred:nextc it
       (lambda (cursor-cons)
@@ -1127,7 +1127,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   "Query KERNEL for completion candidates at POS in CODE and pass the results to CALLBACK."
   (deferred:$
     (deferred:callback-post
-      (ob-jupyter-complete-deferred kernel pos code 1000))
+      (jupyter--complete-deferred kernel pos code 1000))
     (deferred:nextc it #'jupyter--matches)
     (deferred:nextc it callback)))
 
@@ -1135,7 +1135,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   "Query KERNEL for documentation at POS in CODE, put it in a buffer, and pass that buffer to CALLBACK."
   (deferred:$
     (deferred:callback-post
-      (ob-jupyter-inspect-deferred kernel pos code 1000))
+      (jupyter--inspect-deferred kernel pos code 1000))
     (deferred:nextc it #'jupyter--inspect-text)
     (deferred:nextc it #'company-doc-buffer)
     (deferred:nextc it callback)))
@@ -1369,7 +1369,7 @@ PARAMS are the Org Babel parameters associated with the block."
         (error "No running kernel to execute src block")
       (deferred:$
         (deferred:callback-post
-          (ob-jupyter-execute-deferred kernel code))
+          (jupyter--execute-deferred kernel code))
         (deferred:nextc it #'jupyter--raise-error-maybe)
         (deferred:nextc it extract-fn)
         (deferred:nextc it
@@ -1396,13 +1396,13 @@ a :kernel parameter, that will be passed to
       (push (cons session kernel) ob-jupyter-session-kernels-alist)
       (deferred:$
         (deferred:callback-post
-          (ob-jupyter-kernel-info-deferred kernel))
+          (jupyter--kernel-info-deferred kernel))
         (deferred:nextc it #'jupyter--language)
         (deferred:nextc it
           (lambda (lang)
             (push (cons session lang) ob-jupyter-session-langs-alist)))
         (deferred:set-next it
-          (ob-jupyter-kernel-info-deferred kernel))
+          (jupyter--kernel-info-deferred kernel))
         (deferred:nextc it #'jupyter--implementation)
         (deferred:nextc it
           (lambda (interpreter)
