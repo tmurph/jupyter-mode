@@ -737,6 +737,15 @@ If RESTART, restart the kernel after the shutdown."
        (assoc 'implementation)
        (cdr)))
 
+(defun ob-jupyter-status (execute-reply-alist)
+  "Extract the execution status from EXECUTE-REPLY-ALIST.
+
+Returns a string, either \"ok\", \"abort\", or \"error\"."
+  (->> execute-reply-alist
+       (ob-jupyter-shell-content-from-alist)
+       (assoc 'status)
+       (cdr)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)

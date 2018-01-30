@@ -259,5 +259,30 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (string= (ob-jupyter-implementation alist)
                      expected-text))))
 
+(ert-deftest ob-jupyter-status ()
+  "Does `ob-jupyter-status' parse execute reply alists?"
+  (let ((alist
+         '((shell
+            ((header
+              (msg_type . "execute_reply"))
+             (parent_header)
+             (metadata)
+             (content
+              (status . "ok"))))
+           (iopub
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "busy")))
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "idle"))))))
+        (expected-text "ok"))
+    (should (string= (ob-jupyter-status alist)
+                     expected-text))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
