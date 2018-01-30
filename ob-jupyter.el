@@ -1149,5 +1149,52 @@ Process first column of data according to ROWNAMES:
       (push (funcall row-fn row) results))
     (nreverse results)))
 
+(defun ob-jupyter-babel-value-to-file
+    (execute-reply-alist &optional file-name output-dir file-ext)
+  "Process the Jupyter EXECUTE-REPLY-ALIST and return a filename.
+
+This function assumes that the Jupyter reply contains an image,
+so file extensions should be png or svg.
+
+If FILE-NAME is provided, put results in that file and return that name.
+
+In the following cases, if OUTPUT-DIR is not provided, use the
+current directory.
+
+If FILE-NAME is not provided, generate a file with extension
+FILE-EXT in OUTPUT-DIR using `make-temp-name'.
+
+If neither FILE-NAME nor FILE-EXT is provided, generate a file in
+OUTPUT-DIR using `make-temp-name' and the mime types available in
+EXECUTE-REPLY-ALIST.  Prefer png over svg."
+  (let* ((display-alist (ob-jupyter-display-data execute-reply-alist))
+         (png-data (cdr (assoc 'image/png display-alist)))
+         (svg-data (cdr (assoc 'image/svg+xml display-alist))))
+    (unless file-ext
+      (cond
+       (png-data
+        (setq file-ext "png"))
+       (svg-data
+        (setq file-ext "svg"))))
+    (unless file-name
+      (setq file-name (concat (make-temp-name "") "." file-ext)))
+    (unless (or (not output-dir)
+                (string-prefix-p output-dir file-name))
+      (setq file-name (concat (file-name-as-directory output-dir)
+                              file-name)))
+    (cond
+     ((string= file-ext "png")
+      (with-temp-buffer
+        (let ((buffer-file-coding-system 'binary)
+              (require-final-newline nil))
+          (insert (base64-decode-string png-data))
+          (write-region nil nil file-name))))
+     ((string= file-ext "svg")
+      (with-temp-buffer
+        (let ((require-final-newline nil))
+          (insert svg-data)
+          (write-region nil nil file-name)))))
+    file-name))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here

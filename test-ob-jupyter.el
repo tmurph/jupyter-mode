@@ -523,5 +523,45 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ob-jupyter-babel-value-to-table alist rownames colnames)
                  expected-table)))
 
+(ert-deftest-parametrize ob-jupyter-babel-value-to-file
+  (alist file-name output-dir file-ext expected-name)
+  (('((iopub
+       ((header (msg_type . "display_data"))
+        (content
+         (data
+          (image/png . "base64encoded"))))))
+    "random.png" nil nil "random.png")
+   ('((iopub
+       ((header (msg_type . "display_data"))
+        (content
+         (data
+          (image/png . "base64encoded"))))))
+    nil nil "png" "random.png")
+   ('((iopub
+       ((header (msg_type . "display_data"))
+        (content
+         (data
+          (image/png . "base64encoded"))))))
+    nil "test" "png" "test/random.png")
+   ('((iopub
+       ((header (msg_type . "display_data"))
+        (content
+         (data
+          (image/png . "base64encoded"))))))
+    "override" "test" "png" "test/override")
+   ('((iopub
+       ((header (msg_type . "display_data"))
+        (content
+         (data
+          (image/png . "base64encoded"))))))
+    nil nil nil "random.png"))
+  (cl-letf (((symbol-function 'make-temp-name)
+             (lambda (prefix) (concat prefix "random")))
+            ((symbol-function 'base64-decode-string) #'ignore-errors)
+            ((symbol-function 'write-region) #'ignore))
+    (should (equal (ob-jupyter-babel-value-to-file
+                    alist file-name output-dir file-ext)
+                   expected-name))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
