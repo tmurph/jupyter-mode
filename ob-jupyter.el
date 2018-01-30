@@ -1098,5 +1098,7 @@ IGNORED is not used."
                          #'ob-jupyter-company-doc-buffer-async
                          kernel (length arg) arg))))))
 
+;; Babel
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
