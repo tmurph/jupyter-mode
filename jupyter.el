@@ -1102,7 +1102,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
 
 ;; Minor Mode
 
-(define-minor-mode ob-jupyter-mode
+(define-minor-mode jupyter-mode
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil)
 
@@ -1151,7 +1151,7 @@ IGNORED is not used."
     (cl-case command
       (interactive (company-begin-backend 'company-ob-jupyter))
       (prefix (and
-               ob-jupyter-mode
+               jupyter-mode
                (not (company-in-string-or-comment))
                (cons :async
                      (apply-partially #'ob-jupyter-company-prefix-async
@@ -1318,7 +1318,7 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
                  (lambda () (run-hooks 'change-major-mode-hook))))
         (funcall (org-src--get-lang-mode lang)))
       (setq-local ob-jupyter-current-kernel kernel)
-      (ob-jupyter-mode +1)
+      (jupyter-mode +1)
       (run-hook-with-args
        (intern (format "ob-jupyter-%s-edit-prep-hook" lang))
        babel-info))))
