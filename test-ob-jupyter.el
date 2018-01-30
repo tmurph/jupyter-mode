@@ -374,5 +374,31 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (string= (ob-jupyter-inspect-text alist)
                      expected-text))))
 
+(ert-deftest ob-jupyter-cursor-pos ()
+  "Does `ob-jupyter-cursor-pos' parse complete reply alists?"
+  (let ((alist
+         '((shell
+            ((header
+              (msg_type . "complete_reply"))
+             (parent_header)
+             (metadata)
+             (content
+              (cursor_end . 6)
+              (cursor_start . 0))))
+           (iopub
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "busy")))
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "idle"))))))
+        (expected-cons (cons 0 6)))
+    (should (equal (ob-jupyter-cursor-pos alist)
+                   expected-cons))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here

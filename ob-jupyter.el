@@ -813,6 +813,14 @@ Returns an alist like:
        (assoc 'text/plain)
        (cdr)))
 
+(defun ob-jupyter-cursor-pos (complete-reply-alist)
+  "Extract a cons like (CURSOR_START . CURSOR_END) from COMPLETE-REPLY-ALIST."
+  (let* ((content (ob-jupyter-shell-content-from-alist
+                   complete-reply-alist))
+         (cursor-end (cdr (assoc 'cursor_end content)))
+         (cursor-start (cdr (assoc 'cursor_start content))))
+    (cons cursor-start cursor-end)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)
