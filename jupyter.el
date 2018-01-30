@@ -71,7 +71,7 @@
 
 ;;; this is exactly like `assq-delete-all' except with `equal'
 ;;; for some reason that's not built in
-(defun ob-jupyter-assoc-delete-all (key alist)
+(defun jupyter--assoc-delete-all (key alist)
   "Delete from ALIST all elements whose car is `equal' to KEY.
 Return the modified alist.
 Elements of ALIST that are not conses are ignore."
@@ -1419,12 +1419,12 @@ a :kernel parameter, that will be passed to
   "Remove SESSION from internal alists and finalize the kernel."
   (let ((kernel (cdr (assoc session jupyter--session-kernels-alist))))
     (setq jupyter--session-kernels-alist
-          (ob-jupyter-assoc-delete-all
+          (jupyter--assoc-delete-all
            session jupyter--session-kernels-alist)
           jupyter--session-langs-alist
-          (ob-jupyter-assoc-delete-all
+          (jupyter--assoc-delete-all
            session jupyter--session-langs-alist))
-    (ob-jupyter-assoc-delete-all session jupyter--session-langs-alist)
+    (jupyter--assoc-delete-all session jupyter--session-langs-alist)
     (jupyter-finalize-kernel kernel)))
 
 ;; Python specific
