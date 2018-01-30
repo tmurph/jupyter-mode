@@ -72,6 +72,10 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
 (autoload 'ansi-color-apply "ansi-color")
 
+(defvar python-shell--interpreter)
+(defvar python-shell--interpreter-args)
+(declare-function inferior-python-mode "python" nil)
+
 ;; Customize
 
 (defgroup ob-jupyter nil
@@ -1100,6 +1104,12 @@ IGNORED is not used."
 
 ;; Babel
 
+(defvar ob-jupyter-session-kernels-alist nil
+  "Internal alist of (SESSION . KERNEL) pairs.")
+
+(defvar ob-jupyter-session-langs-alist nil
+  "Internal alist of (SESSION . LANGUAGE) pairs.")
+
 (defun ob-jupyter-babel-output (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'output.
 
@@ -1216,6 +1226,52 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
         (ob-jupyter-babel-value-to-file alist file output-dir file-ext)))
      (t
       #'ob-jupyter-babel-value))))
+
+;;; This function is expected to return the session buffer.
+;;; It functions more like -acquire-session (in the RAII sense).
+(defun org-babel-jupyter-initiate-session (session params)
+  "Return the comint buffer associated with SESSION.
+
+If no such buffer exists yet, create one with
+`ob-jupyter-initialize-kernel'.  If Babel PARAMS includes
+a :kernel parameter, that will be passed to
+`ob-jupyter-initialize-kernel'."
+  (let ((kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
+        (kernel-param (cdr (assq :kernel params))))
+    (unless kernel
+      (setq kernel (ob-jupyter-initialize-kernel kernel-param session))
+      (push (cons session kernel) ob-jupyter-session-kernels-alist)
+      (deferred:$
+        (deferred:callback-post
+          (ob-jupyter-kernel-info-deferred kernel))
+        (deferred:nextc it #'ob-jupyter-language)
+        (deferred:nextc it
+          (lambda (lang)
+            (push (cons session lang) ob-jupyter-session-langs-alist)))
+        (deferred:set-next it
+          (ob-jupyter-kernel-info-deferred kernel))
+        (deferred:nextc it #'ob-jupyter-implementation)
+        (deferred:nextc it
+          (lambda (interpreter)
+            (ob-jupyter-setup-inferior
+             interpreter (ob-jupyter-struct-buffer kernel))))))
+    (ob-jupyter-struct-buffer kernel)))
+
+(defun ob-jupyter-setup-inferior (interp inf-buffer)
+  "Set up the appropriate major mode in INF-BUFFER according to INTERP."
+  (cond
+   ((string= interp "ipython")
+    (ob-jupyter-setup-inferior-ipython inf-buffer))))
+
+;; Python specific
+
+(defun ob-jupyter-setup-inferior-ipython (inf-buffer)
+  "Set up inferior IPython mode in INF-BUFFER."
+  (let ((python-shell--interpreter "ipython")
+        (python-shell--interpreter-args
+         (mapconcat #'identity (cons "-i" ob-jupyter-command-args) " ")))
+    (with-current-buffer inf-buffer
+      (inferior-python-mode))))
 
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
