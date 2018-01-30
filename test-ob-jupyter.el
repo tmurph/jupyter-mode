@@ -447,5 +447,81 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
         (expected "minimal example"))
     (should (equal (ob-jupyter-babel-value alist) expected))))
 
+(ert-deftest-parametrize ob-jupyter-babel-value-to-table
+  (alist rownames colnames expected-table)
+  ((`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "  Character       Move  Frames\n"
+                          "0     samus  neutral-a      17\n"
+                          "1     samus     f-tilt      31\n"
+                          "2     samus     d-tilt      39")))))))
+    nil nil
+    '(("" "Character" "Move" "Frames")
+      ("0" "samus" "neutral-a" "17")
+      ("1" "samus" "f-tilt" "31")
+      ("2" "samus" "d-tilt" "39")))
+   (`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "  Character       Move  Frames\n"
+                          "0     samus  neutral-a      17\n"
+                          "1     samus     f-tilt      31\n"
+                          "2     samus     d-tilt      39")))))))
+    "no" nil
+    '(("Character" "Move" "Frames")
+      ("samus" "neutral-a" "17")
+      ("samus" "f-tilt" "31")
+      ("samus" "d-tilt" "39")))
+   (`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "  Character       Move  Frames\n"
+                          "0     samus  neutral-a      17\n"
+                          "1     samus     f-tilt      31\n"
+                          "2     samus     d-tilt      39")))))))
+    nil "no"
+    '(("0" "samus" "neutral-a" "17")
+      ("1" "samus" "f-tilt" "31")
+      ("2" "samus" "d-tilt" "39")))
+   (`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "  Character       Move  Frames\n"
+                          "0     samus  neutral-a      17\n"
+                          "1     samus     f-tilt      31\n"
+                          "2     samus     d-tilt      39")))))))
+    nil "yes"
+    '(("" "Character" "Move" "Frames")
+      hline
+      ("0" "samus" "neutral-a" "17")
+      ("1" "samus" "f-tilt" "31")
+      ("2" "samus" "d-tilt" "39")))
+   (`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "  Character       Move  Frames\n"
+                          "0     samus  neutral-a      17\n"
+                          "1     samus     f-tilt      31\n"
+                          "2     samus     d-tilt      39")))))))
+    "no" "yes"
+    '(("Character" "Move" "Frames")
+      hline
+      ("samus" "neutral-a" "17")
+      ("samus" "f-tilt" "31")
+      ("samus" "d-tilt" "39"))))
+  (should (equal (ob-jupyter-babel-value-to-table alist rownames colnames)
+                 expected-table)))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here

@@ -1116,5 +1116,38 @@ Currently this returns the contents of the \"stdout\" stream."
        (assoc 'text/plain)
        (cdr)))
 
+(defun ob-jupyter-babel-value-to-table
+    (execute-reply-alist &optional rownames colnames)
+  "Process the Jupyter EXECUTE-REPLY-ALIST and return a list-of-lists.
+
+This function assumes that the Jupyter reply represents some sort
+of dataframe-like object, so the Babel params :rownames
+and :colnames are overloaded to handle that case specifically.
+
+Process first row of data according to COLNAMES:
+ - if nil, don't do any column name processing
+ - if \"yes\", insert an 'hline after the first row of data
+ - if \"no\", exclude the first row / column names
+
+Process first column of data according to ROWNAMES:
+ - if nil or \"yes\", don't do any row name processing
+ - if \"no\", exclude the first column / row names / index column"
+  (let* ((result-alist (ob-jupyter-execute-result execute-reply-alist))
+         (text (cdr (assoc 'text/plain result-alist)))
+         (all-rows (split-string text "\n"))
+         (row-fn (if (string= rownames "no")
+                     (lambda (row) (cdr (split-string row " +")))
+                   (lambda (row) (split-string row " +"))))
+         results)
+    (cond
+     ((string= colnames "yes")
+      (push (funcall row-fn (pop all-rows)) results)
+      (push 'hline results))
+     ((string= colnames "no")
+      (pop all-rows)))
+    (dolist (row all-rows)
+      (push (funcall row-fn row) results))
+    (nreverse results)))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
