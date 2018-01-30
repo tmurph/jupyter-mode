@@ -1087,15 +1087,15 @@ Returns a deferred object that can be chained with `deferred:$'."
 
 ;; Debug
 
-(defvar ob-jupyter-deferred-result nil
+(defvar jupyter--deferred-result nil
   "A place to store the last async result.
 
-Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
+Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 
-(defun ob-jupyter-sync-deferred (d)
-  "Fire deferred object D and save the result to `ob-jupyter-deferred-result'."
+(defun jupyter--sync-deferred (d)
+  "Fire deferred object D and save the result to `jupyter--deferred-result'."
   (deferred:watch d
-    (lambda (reply) (setq ob-jupyter-deferred-result reply)))
+    (lambda (reply) (setq jupyter--deferred-result reply)))
   (deferred:callback d))
 
 ;;; Emacs
