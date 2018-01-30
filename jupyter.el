@@ -1106,8 +1106,8 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil)
 
-(defvar-local ob-jupyter-current-kernel nil
-  "The ob-jupyter kernel struct associated with the current buffer.")
+(defvar-local jupyter-current-kernel nil
+  "The Jupyter kernel struct associated with the current buffer.")
 
 ;; Company Completion
 
@@ -1145,7 +1145,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
 
 IGNORED is not used."
   (interactive (list 'interactive))
-  (let ((kernel ob-jupyter-current-kernel)
+  (let ((kernel jupyter-current-kernel)
         (pos (1- (point)))
         (code (buffer-substring-no-properties (point-min) (point))))
     (cl-case command
@@ -1317,7 +1317,7 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
       (cl-letf (((symbol-function 'kill-all-local-variables)
                  (lambda () (run-hooks 'change-major-mode-hook))))
         (funcall (org-src--get-lang-mode lang)))
-      (setq-local ob-jupyter-current-kernel kernel)
+      (setq-local jupyter-current-kernel kernel)
       (jupyter-mode +1)
       (run-hook-with-args
        (intern (format "ob-jupyter-%s-edit-prep-hook" lang))
