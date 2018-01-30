@@ -437,7 +437,7 @@ Returns an `ob-jupyter-struct'."
     (setq proc-buf (apply #'make-comint-in-buffer proc-name
                           proc-buffer-name ob-jupyter-command
                           nil full-args))
-    (while (not (file-exists-p full-file)) (sit-for 0.001))
+    (while (not (file-exists-p full-file)) (sleep-for 0 5))
     ;; so we can read the file here
     (setq json (json-read-file full-file)
           ctx (zmq-ctx-new)
