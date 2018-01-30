@@ -208,5 +208,31 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ob-jupyter-msg-parts-from-alist alist)
                    expected-msg))))
 
+(ert-deftest ob-jupyter-language ()
+  "Does `ob-jupyter-language' parse kernel info reply alists?"
+  (let ((alist
+         '((shell
+            ((header
+              (msg_type . "kernel_info_reply"))
+             (parent_header)
+             (metadata)
+             (content
+              (language_info
+               (name . "python")))))
+           (iopub
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "busy")))
+            ((header)
+             (parent_header)
+             (metadata)
+             (content
+              (execution_state . "idle"))))))
+        (expected-text "python"))
+    (should (string= (ob-jupyter-language alist)
+                     expected-text))))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here

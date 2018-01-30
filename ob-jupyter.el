@@ -722,6 +722,14 @@ If RESTART, restart the kernel after the shutdown."
         (setq result alist)))
     (assoc 'content result)))
 
+(defun ob-jupyter-language (kernel-info-reply-alist)
+  "Extract the kernel language from KERNEL-INFO-REPLY-ALIST."
+  (->> kernel-info-reply-alist
+       (ob-jupyter-shell-content-from-alist)
+       (assoc 'language_info)
+       (assoc 'name)
+       (cdr)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)
