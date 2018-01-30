@@ -460,10 +460,10 @@ to the Jupyter server."
   (key nil :read-only t))
 
 (defun jupyter--initialize-kernel
-    (kernel name &optional cmd-args kernel-args)
-  "Start a Jupyter KERNEL and associate a comint repl.
+    (kernelspec name &optional cmd-args kernel-args)
+  "Start a Jupyter KERNELSPEC and associate a comint repl.
 
-If KERNEL is nil, just use the Jupyter default (python).
+If KERNELSPEC is nil, just use the Jupyter default (python).
 
 The process name, comint buffer name, and Jupyter connection file
 name will all derive from NAME.
@@ -483,7 +483,7 @@ Returns an `jupyter-struct'."
          (full-args (-flatten
                      (list jupyter-command-args
                            "-f" conn-file cmd-args
-                           (and kernel '("--kernel" kernel))
+                           (and kernelspec '("--kernel" kernelspec))
                            kernel-args)))
          proc-buf json ctx iopub shell)
     ;; this creates the conn-file in `jupyter-runtime-dir'
