@@ -746,6 +746,17 @@ Returns a string, either \"ok\", \"abort\", or \"error\"."
        (assoc 'status)
        (cdr)))
 
+(defun ob-jupyter-execute-result (execute-reply-alist)
+  "Extract the IOPub \"execute_result\" from EXECUTE-REPLY-ALIST.
+
+Returns an alist of mimetypes and contents, so like:
+ \((text/plain . \"this is always here\")
+  \(text/html . \"maybe this is here\"))"
+  (->> execute-reply-alist
+       (ob-jupyter-iopub-content-from-alist "execute_result")
+       (assoc 'data)
+       (cdr)))
+
 ;; High level API
 
 (defun ob-jupyter-send-alist-sync (alist socket &optional key)

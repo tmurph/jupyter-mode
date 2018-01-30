@@ -284,5 +284,33 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (string= (ob-jupyter-status alist)
                      expected-text))))
 
+(ert-deftest-parametrize ob-jupyter-execute-result
+  (alist expected)
+  (('((iopub
+       ((header (msg_type . "status"))
+        (content (execution_state . "busy")))
+       ((header (msg_type . "execute_input")))
+       ((header (msg_type . "status"))
+        (content (execution_state . "idle")))))
+    nil)
+   ('((iopub
+       ((header (msg_type . "status"))
+        (content (execution_state . "busy")))
+       ((header (msg_type . "execute_input")))
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . "'/path/to/some/dir'"))))
+       ((header (msg_type . "status"))
+        (content (execution_state . "idle")))))
+    '((text/plain . "'/path/to/some/dir'")))
+   ('((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . "minimal example"))))))
+    '((text/plain . "minimal example"))))
+  (should (equal (ob-jupyter-execute-result alist) expected)))
+
 (provide 'test-ob-jupyter)
 ;;; test-ob-jupyter.el ends here
