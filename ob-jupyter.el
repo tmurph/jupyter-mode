@@ -69,6 +69,8 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
 (autoload 'org-id-uuid "org-id")
 
+(autoload 'ansi-color-apply "ansi-color")
+
 ;; Customize
 
 (defgroup ob-jupyter nil
@@ -786,6 +788,17 @@ Returns an alist like:
   \(ename . \"error name\")
   \(evalue . \"error value\"))"
   (cdr (ob-jupyter-iopub-content-from-alist "error" execute-reply-alist)))
+
+(defun ob-jupyter-error-traceback-buffer (error-alist)
+  "Create a buffer with the traceback from ERROR-ALIST."
+  (let ((buf (get-buffer-create "*ob-jupyter-traceback*"))
+        (tb (cdr (assoc 'tracback error-alist))))
+    (with-current-buffer buf
+      (erase-buffer)
+      (mapc (lambda (line)
+              (insert (ansi-color-apply (format "%s\n" line))))
+            tb)
+      (current-buffer))))
 
 ;; High level API
 
