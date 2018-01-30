@@ -69,12 +69,18 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 ;; External Definitions
 
 (autoload 'org-id-uuid "org-id")
+(declare-function org-src--get-lang-mode "org-src" (lang))
 
 (autoload 'ansi-color-apply "ansi-color")
 
+(defvar python-shell-buffer-name)
 (defvar python-shell--interpreter)
 (defvar python-shell--interpreter-args)
 (declare-function inferior-python-mode "python" nil)
+
+(declare-function org-babel-python-without-earmuffs "ob-python" (session))
+
+(defvar ob-jupyter-python-edit-prep-hook)
 
 ;; Customize
 
@@ -1227,6 +1233,34 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
      (t
       #'ob-jupyter-babel-value))))
 
+(defun org-babel-edit-prep:jupyter (babel-info)
+  "Set up the edit buffer per BABEL-INFO.
+
+BABEL-INFO is as returned by `org-babel-get-src-block-info'."
+  (let* ((params (nth 2 babel-info))
+         (session (cdr (assq :session params)))
+         (kernel (cdr (assoc session ob-jupyter-session-kernels-alist)))
+         (lang (cdr (assoc session ob-jupyter-session-langs-alist))))
+    (if (not kernel)
+        (message "No running kernel. Cannot set up src buffer.")
+      ;; Hack around the normal behavior of changing major mode.
+
+      ;; We have to do this b/c `org-edit-src-code' sets up important
+      ;; local variables after setting the major mode, which we miss
+      ;; when we reset the major mode *after* setting up the buffer.
+
+      ;; I suppose in a perfect world we could associate the appropriate
+      ;; language with a babel param, like Org Babel expects.  But I
+      ;; dunno how to do that with my current code.
+      (cl-letf (((symbol-function 'kill-all-local-variables)
+                 (lambda () (run-hooks 'change-major-mode-hook))))
+        (funcall (org-src--get-lang-mode lang)))
+      (setq-local ob-jupyter-current-kernel kernel)
+      (ob-jupyter-mode +1)
+      (run-hook-with-args
+       (intern (format "ob-jupyter-%s-edit-prep-hook" lang))
+       babel-info))))
+
 ;;; This function is expected to return the session buffer.
 ;;; It functions more like -acquire-session (in the RAII sense).
 (defun org-babel-jupyter-initiate-session (session params)
@@ -1264,6 +1298,21 @@ a :kernel parameter, that will be passed to
     (ob-jupyter-setup-inferior-ipython inf-buffer))))
 
 ;; Python specific
+
+(defun ob-jupyter-python-edit-prep (babel-info)
+  "Set up Python source buffers.
+
+Currently, this just sets `python-shell-buffer-name' to the
+kernel buffer associated with :session in BABEL-INFO."
+  (let* ((params (nth 2 babel-info))
+         (session (cdr (assq :session params))))
+    (set (make-local-variable 'python-shell-buffer-name)
+         (org-babel-python-without-earmuffs
+          (buffer-name
+           (org-babel-jupyter-initiate-session session params))))))
+
+(add-hook 'ob-jupyter-python-edit-prep-hook
+          #'ob-jupyter-python-edit-prep)
 
 (defun ob-jupyter-setup-inferior-ipython (inf-buffer)
   "Set up inferior IPython mode in INF-BUFFER."
