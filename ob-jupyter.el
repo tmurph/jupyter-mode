@@ -1196,5 +1196,26 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
           (write-region nil nil file-name)))))
     file-name))
 
+(defun ob-jupyter-babel-extract-fn (params)
+  "Return the appropriate function to compute results according to Babel PARAMS."
+  (let* ((result-type (cdr (assq :result-type params)))
+         (result-params (cdr (assq :result-params params)))
+         (rownames (cdr (assq :rownames params)))
+         (colnames (cdr (assq :colnames params)))
+         (file (cdr (assq :file params)))
+         (output-dir (cdr (assq :output-dir params)))
+         (file-ext (cdr (assq :file-ext params))))
+    (cond
+     ((eq result-type 'output)
+      #'ob-jupyter-babel-output)
+     ((or (member "table" result-params) (member "vector" result-params))
+      (lambda (alist)
+        (ob-jupyter-babel-value-to-table alist rownames colnames)))
+     ((member "file" result-params)
+      (lambda (alist)
+        (ob-jupyter-babel-value-to-file alist file output-dir file-ext)))
+     (t
+      #'ob-jupyter-babel-value))))
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
