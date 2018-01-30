@@ -78,12 +78,12 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
   :type 'string
   :group 'ob-jupyter)
 
-(defcustom ob-jupyter-interpreter "jupyter-console"
+(defcustom ob-jupyter-command "jupyter-console"
   "Command to start the interactive interpreter."
   :type 'string
   :group 'ob-jupyter)
 
-(defcustom ob-jupyter-interpreter-args '("--simple-prompt")
+(defcustom ob-jupyter-command-args '("--simple-prompt")
   "Default arguments for the interactive interpreter."
   :type '(repeat string)
   :group 'ob-jupyter)
@@ -416,9 +416,9 @@ The process name, comint buffer name, and Jupyter connection file
 name will all derive from NAME.
 
 If provided, the CMD-ARGS and KERNEL-ARGS (which must be lists) will
-be passed to `ob-jupyter-interpreter' like so:
+be passed to `ob-jupyter-command' like so:
 
-$ `ob-jupyter-interpreter' `ob-jupyter-interpreter-args'
+$ `ob-jupyter-command' `ob-jupyter-command-args'
   -f derived-connection-file
   CMD-ARGS --kernel KERNEL KERNEL-ARGS
 
@@ -428,14 +428,14 @@ Returns an `ob-jupyter-struct'."
          (conn-file (format "emacs-%s.json" name))
          (full-file (expand-file-name conn-file ob-jupyter-runtime-dir))
          (full-args (-flatten
-                     (list ob-jupyter-interpreter-args
+                     (list ob-jupyter-command-args
                            "-f" conn-file cmd-args
                            (and kernel '("--kernel" kernel))
                            kernel-args)))
          proc-buf json ctx iopub shell)
     ;; this creates the conn-file in `ob-jupyter-runtime-dir'
     (setq proc-buf (apply #'make-comint-in-buffer proc-name
-                          proc-buffer-name ob-jupyter-interpreter
+                          proc-buffer-name ob-jupyter-command
                           nil full-args))
     (while (not (file-exists-p full-file)) (sit-for 0.001))
     ;; so we can read the file here
