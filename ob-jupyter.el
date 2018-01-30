@@ -620,6 +620,13 @@ message before returning."
     (dolist (key keys (nreverse ret))
       (push (json-encode-alist (cdr (assq key alist))) ret))))
 
+(defun ob-jupyter-msg-type-from-alist (alist)
+  "Extract the \"msg_type\" value from Jupyter protocol ALIST."
+  (->> alist
+       (assoc 'header)
+       (assoc 'msg_type)
+       (cdr)))
+
 (defun ob-jupyter-default-header (msg_type &optional session)
   "Create a Jupyter protocol header alist of type MSG_TYPE.
 
@@ -696,6 +703,24 @@ If RESTART, restart the kernel after the shutdown."
        (assq 'msg_type)
        cdr
        (string-match-p "reply\\'")))
+
+(defun ob-jupyter-shell-content-from-alist (reply-alist)
+  "Extract the \"content\" alist from the \"shell\" part of REPLY-ALIST."
+  (->> reply-alist
+       (assoc 'shell)
+       (cadr)       ; assume shell reply is a list with just one message
+       (assoc 'content)))
+
+(defun ob-jupyter-iopub-content-from-alist (msg-type reply-alist)
+  "Extract the \"content\" alist from the first IOPub message of type MSG-TYPE in REPLY-ALIST."
+  (let ((rest (cdr (assoc 'iopub reply-alist)))
+        alist result)
+    (while (and rest (not result))
+      (setq alist (car rest)
+            rest (cdr rest))
+      (when (string= msg-type (ob-jupyter-msg-type-from-alist alist))
+        (setq result alist)))
+    (assoc 'content result)))
 
 ;; High level API
 
