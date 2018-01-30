@@ -813,6 +813,75 @@ Returns a deferred object that can be chained with `deferred:$'."
    (ob-jupyter-struct-key kernel)
    timeout))
 
+(defun ob-jupyter-kernel-info-deferred (kernel &optional timeout)
+  "Defer a Jupyter kernel info request / reply roundtrip.
+
+When fired, queries KERNEL for basic info.
+
+If TIMEOUT is provided, stop receiving from kernel socket if any
+receive on that socket takes longer that TIMEOUT msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (ob-jupyter-roundtrip-deferred
+   (ob-jupyter-kernel-info-request-alist)
+   kernel timeout))
+
+(defun ob-jupyter-execute-deferred (kernel code &optional timeout)
+  "Defer a Jupyter code execution request / reply roundtrip.
+
+When fired, execute CODE on KERNEL.
+
+If TIMEOUT is provided, stop receiving replies from a kernel
+socket if any receive on that socket takes longer than TIMEOUT
+msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (ob-jupyter-roundtrip-deferred
+   (ob-jupyter-execute-request-alist code)
+   kernel timeout))
+
+(defun ob-jupyter-inspect-deferred (kernel pos code &optional timeout)
+  "Defer a Jupyter inspection request / reply roundtrip.
+
+When fired, queries KERNEL for info on the object at POS in CODE.
+
+If TIMEOUT is provided, stop receiving from a kernel socket if
+any receive on that socket takes longer than TIMEOUT msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (ob-jupyter-roundtrip-deferred
+   (ob-jupyter-inspect-request-alist pos code)
+   kernel timeout))
+
+(defun ob-jupyter-complete-deferred (kernel pos code &optional timeout)
+  "Defer a Jupyter completion request / reply roundtrip.
+
+When fired, queries KERNEL for completion info at POS in CODE.
+
+If TIMEOUT is provided, stop receiving from a kernel socket if
+any receive on that socket takes longer than TIMEOUT msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (ob-jupyter-roundtrip-deferred
+   (ob-jupyter-complete-request-alist pos code)
+   kernel timeout))
+
+;;; wtf? why doesn't this actually shut things down?
+(defun ob-jupyter-shutdown-deferred (kernel &optional restart timeout)
+  "Defer a Jupyter shutdown request / reply roundtrip.
+
+When fired, ask KERNEL to shutdown.
+
+If RESTART is provided, ask KERNEL to restart after shutdown.
+
+If TIMEOUT is provided, stop receiving from a kernel socket if
+any receive on that socket takes longer than TIMEOUT msec.
+
+Returns a deferred object that can be chained with `deferred:$'."
+  (ob-jupyter-roundtrip-deferred
+   (ob-jupyter-shutdown-request-alist restart)
+   kernel timeout))
+
 ;; Debug
 
 (defvar ob-jupyter-deferred-result nil
