@@ -1029,5 +1029,7 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
     (lambda (reply) (setq ob-jupyter-deferred-result reply)))
   (deferred:callback d))
 
+;;; Emacs
+
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
