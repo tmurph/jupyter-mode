@@ -1111,7 +1111,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 
 ;; Company Completion
 
-(defun ob-jupyter-company-prefix-async (kernel pos code callback)
+(defun jupyter--company-prefix-async (kernel pos code callback)
   "Query KERNEL for the completion prefix at POS in CODE and pass the result to CALLBACK."
   (deferred:$
     (deferred:callback-post
@@ -1123,7 +1123,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
          code (car cursor-cons) (cdr cursor-cons))))
     (deferred:nextc it callback)))
 
-(defun ob-jupyter-company-candidates-async (kernel pos code callback)
+(defun jupyter--company-candidates-async (kernel pos code callback)
   "Query KERNEL for completion candidates at POS in CODE and pass the results to CALLBACK."
   (deferred:$
     (deferred:callback-post
@@ -1131,7 +1131,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
     (deferred:nextc it #'jupyter--matches)
     (deferred:nextc it callback)))
 
-(defun ob-jupyter-company-doc-buffer-async (kernel pos code callback)
+(defun jupyter--company-doc-buffer-async (kernel pos code callback)
   "Query KERNEL for documentation at POS in CODE, put it in a buffer, and pass that buffer to CALLBACK."
   (deferred:$
     (deferred:callback-post
@@ -1140,7 +1140,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
     (deferred:nextc it #'company-doc-buffer)
     (deferred:nextc it callback)))
 
-(defun company-ob-jupyter (command &optional arg &rest ignored)
+(defun company-jupyter (command &optional arg &rest ignored)
   "Provide completion info according to COMMAND and ARG.
 
 IGNORED is not used."
@@ -1149,21 +1149,21 @@ IGNORED is not used."
         (pos (1- (point)))
         (code (buffer-substring-no-properties (point-min) (point))))
     (cl-case command
-      (interactive (company-begin-backend 'company-ob-jupyter))
+      (interactive (company-begin-backend 'company-jupyter))
       (prefix (and
                jupyter-mode
                (not (company-in-string-or-comment))
                (cons :async
-                     (apply-partially #'ob-jupyter-company-prefix-async
+                     (apply-partially #'jupyter--company-prefix-async
                                       kernel pos code))))
       (candidates (cons :async
                         (apply-partially
-                         #'ob-jupyter-company-candidates-async
+                         #'jupyter--company-candidates-async
                          kernel pos code)))
       (sorted t)
       (doc-buffer (cons :async
                         (apply-partially
-                         #'ob-jupyter-company-doc-buffer-async
+                         #'jupyter--company-doc-buffer-async
                          kernel (length arg) arg))))))
 
 ;; Babel
