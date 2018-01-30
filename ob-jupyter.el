@@ -5,7 +5,7 @@
 ;; Version: 0.1.0
 ;; Keywords: literate programming, reproducible research
 ;; URL: https://github.com/tmurph/ob-jupyter
-;; Package-Requires: (deferred dash emacs-ffi)
+;; Package-Requires: (company deferred dash emacs-ffi)
 
 ;; This file is not part of GNU Emacs.
 
@@ -47,6 +47,7 @@
 (require 'json)
 (require 'dash)
 (require 'deferred)
+(require 'company)
 
 ;; Constants
 
@@ -1037,7 +1038,65 @@ Handy for debugging.  Set it with `ob-jupyter-sync-deferred'.")
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil)
 
+(defvar-local ob-jupyter-current-kernel nil
+  "The ob-jupyter kernel struct associated with the current buffer.")
+
 ;; Company Completion
+
+(defun ob-jupyter-company-prefix-async (kernel pos code callback)
+  "Query KERNEL for the completion prefix at POS in CODE and pass the result to CALLBACK."
+  (deferred:$
+    (deferred:callback-post
+      (ob-jupyter-complete-deferred kernel pos code))
+    (deferred:nextc it #'ob-jupyter-cursor-pos)
+    (deferred:nextc it
+      (lambda (cursor-cons)
+        (substring-no-properties
+         code (car cursor-cons) (cdr cursor-cons))))
+    (deferred:nextc it callback)))
+
+(defun ob-jupyter-company-candidates-async (kernel pos code callback)
+  "Query KERNEL for completion candidates at POS in CODE and pass the results to CALLBACK."
+  (deferred:$
+    (deferred:callback-post
+      (ob-jupyter-complete-deferred kernel pos code 1000))
+    (deferred:nextc it #'ob-jupyter-matches)
+    (deferred:nextc it callback)))
+
+(defun ob-jupyter-company-doc-buffer-async (kernel pos code callback)
+  "Query KERNEL for documentation at POS in CODE, put it in a buffer, and pass that buffer to CALLBACK."
+  (deferred:$
+    (deferred:callback-post
+      (ob-jupyter-inspect-deferred kernel pos code 1000))
+    (deferred:nextc it #'ob-jupyter-inspect-text)
+    (deferred:nextc it #'company-doc-buffer)
+    (deferred:nextc it callback)))
+
+(defun company-ob-jupyter (command &optional arg &rest ignored)
+  "Provide completion info according to COMMAND and ARG.
+
+IGNORED is not used."
+  (interactive (list 'interactive))
+  (let ((kernel ob-jupyter-current-kernel)
+        (pos (1- (point)))
+        (code (buffer-substring-no-properties (point-min) (point))))
+    (cl-case command
+      (interactive (company-begin-backend 'company-ob-jupyter))
+      (prefix (and
+               ob-jupyter-mode
+               (not (company-in-string-or-comment))
+               (cons :async
+                     (apply-partially #'ob-jupyter-company-prefix-async
+                                      kernel pos code))))
+      (candidates (cons :async
+                        (apply-partially
+                         #'ob-jupyter-company-candidates-async
+                         kernel pos code)))
+      (sorted t)
+      (doc-buffer (cons :async
+                        (apply-partially
+                         #'ob-jupyter-company-doc-buffer-async
+                         kernel (length arg) arg))))))
 
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
