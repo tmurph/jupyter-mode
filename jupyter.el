@@ -106,8 +106,6 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 ;; External Definitions
 
 (autoload 'org-id-uuid "org-id")
-(declare-function org-src--get-lang-mode "org-src" (lang))
-
 (autoload 'ansi-color-apply "ansi-color")
 
 (defvar python-shell-buffer-name)
@@ -1218,6 +1216,8 @@ IGNORED is not used."
                    kernel (length arg) arg)))))
 
 ;; Babel
+
+(declare-function org-src--get-lang-mode "org-src" (lang))
 
 (defun ob-jupyter--babel-output (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'output.
