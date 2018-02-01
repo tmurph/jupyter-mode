@@ -476,7 +476,7 @@ $ `jupyter-command' `jupyter-command-args'
   CMD-ARGS --kernel KERNEL KERNEL-ARGS
 
 Returns an `jupyter-struct'."
-  (let* ((proc-name (format "*ob-jupyter-%s*" name))
+  (let* ((proc-name (format "*jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
          (conn-file (format "emacs-%s.json" name))
          (full-file (expand-file-name conn-file jupyter-runtime-dir))
