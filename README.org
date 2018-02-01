@@ -144,6 +144,6 @@ The following message factories are available:
 - [X] implement company completion with asynchronous completion requests
 - [ ] write backend / frontend tests … maybe mock objects are my friend?
 - [X] use kernel-info-request to determine the appropriate major mode for the inferior comint buffer
-- [ ] fix eldoc bug
+- [X] fix eldoc bug
 - [ ] implement R and Julia support … the framework is there, just not the content
 - [ ] instrument completion … how much can I get from speeding up my code?

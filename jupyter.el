@@ -833,6 +833,20 @@ If RESTART, restart the kernel after the shutdown."
         (setq result alist)))
     (assoc 'content result)))
 
+(defun jupyter--msg-id (alist)
+  "Extract the msg_id of the header of ALIST."
+  (->> alist
+       (assoc 'header)
+       (assoc 'msg_id)
+       (cdr)))
+
+(defun jupyter--parent-id (alist)
+  "Extract the msg_id of the parent_header of ALIST."
+  (->> alist
+       (assoc 'parent_header)
+       (assoc 'msg_id)
+       (cdr)))
+
 (defun jupyter--language (kernel-info-reply-alist)
   "Extract the kernel language from KERNEL-INFO-REPLY-ALIST."
   (->> kernel-info-reply-alist
@@ -999,10 +1013,14 @@ Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (lambda () (jupyter--recv-alist-sync socket key))))
 
-(defun jupyter--recv-all-deferred (socket last-p &optional key timeout)
+(defun jupyter--recv-all-deferred
+    (socket parent-id last-p &optional key timeout)
   "Defer receiving a list of Jupyter reply alists from SOCKET.
 
-Loops until (funcall LAST-P alist) is not nil.
+If PARENT-ID is not nil, only consider replies with parent_header
+msg_id of PARENT-ID.  Otherwise, consider all replies.
+
+Loop until (funcall LAST-P alist) is not nil.
 
 If TIMEOUT is provided, terminate early if any receive takes
 longer than TIMEOUT msec.
@@ -1019,12 +1037,14 @@ Returns a deferred object that can be chained with `deferred:$'."
           (jupyter--recv-alist-deferred socket key))
         (deferred:nextc it
           (lambda (alist)
-            (push alist results)
-            alist))
+            (when (or (not parent-id)
+                      (string= (jupyter--parent-id alist) parent-id))
+              (push alist results)
+              alist)))
         (deferred:set-next it
           (make-deferred
            :callback (lambda (alist)
-                       (if (funcall last-p alist)
+                       (if (and alist (funcall last-p alist))
                            (nreverse results)
                          (deferred:next self results)))
            :errorback (lambda () (nreverse results))))))))
@@ -1050,11 +1070,11 @@ Returns a deferred object that can be chained with `deferred:$'."
       (deferred:parallel
         `((shell . ,(deferred:callback-post
                       (jupyter--recv-all-deferred
-                       shell-socket
+                       shell-socket (jupyter--msg-id alist)
                        #'jupyter--shell-last-p key timeout)))
           (iopub . ,(deferred:callback-post
                       (jupyter--recv-all-deferred
-                       io-socket
+                       io-socket (jupyter--msg-id alist)
                        #'jupyter--iopub-last-p key timeout))))))))
 
 (defun jupyter--roundtrip-deferred (alist kernel &optional timeout)
@@ -1167,10 +1187,12 @@ Pretty prints the results to *jupyter-debug* buffer."
       (deferred:parallel
         `((shell . ,(deferred:callback-post
                       (jupyter--recv-all-deferred
-                       shell-port #'jupyter--shell-last-p key 1000)))
+                       shell-port nil
+                       #'jupyter--shell-last-p key 1000)))
           (iopub . ,(deferred:callback-post
                       (jupyter--recv-all-deferred
-                       iopub-port #'jupyter--iopub-last-p key 1000)))))
+                       iopub-port nil
+                       #'jupyter--iopub-last-p key 1000)))))
       (deferred:nextc it
         (lambda (alist)
           (with-current-buffer debug-buf (erase-buffer))
