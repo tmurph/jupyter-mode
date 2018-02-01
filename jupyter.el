@@ -920,7 +920,7 @@ Returns an alist like:
 (defun jupyter--error-traceback-buffer (error-alist)
   "Create a buffer with the traceback from ERROR-ALIST."
   (let ((buf (get-buffer-create "*ob-jupyter-traceback*"))
-        (tb (cdr (assoc 'tracback error-alist))))
+        (tb (cdr (assoc 'traceback error-alist))))
     (with-current-buffer buf
       (erase-buffer)
       (mapc (lambda (line) (insert (format "%s\n" line))) tb)
