@@ -108,15 +108,6 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 (autoload 'org-id-uuid "org-id")
 (autoload 'ansi-color-apply "ansi-color")
 
-(defvar python-shell-buffer-name)
-(defvar python-shell--interpreter)
-(defvar python-shell--interpreter-args)
-(declare-function inferior-python-mode "python" nil)
-
-(declare-function org-babel-python-without-earmuffs "ob-python" (session))
-
-(defvar ob-jupyter-python-edit-prep-hook)
-
 ;; Customize
 
 (defgroup jupyter nil
@@ -425,6 +416,12 @@ Returns a list of the various parts."
 
 ;; Process Management
 
+(defvar jupyter--session-kernels-alist nil
+  "Internal alist of (SESSION . KERNEL) pairs.")
+
+(defvar jupyter--session-langs-alist nil
+  "Internal alist of (SESSION . LANGUAGE) pairs.")
+
 (cl-defstruct (jupyter-struct
                (:constructor jupyter-struct--create)
                (:copier jupyter-struct--copy))
@@ -525,6 +522,70 @@ Returns an `jupyter-struct'."
   (zmq--close (jupyter-struct-iopub struct))
   (zmq--close (jupyter-struct-shell struct))
   (zmq--ctx-destroy (jupyter-struct-context struct)))
+
+(defun jupyter--initialize-session
+    (session &optional kernelspec cmd-args kernel-args)
+  "Return the internal pair (SESSION . kernel-struct).
+
+If no such pair exists yet, create one with
+`jupyter--initialize-kernel' and update
+`jupyter--session-kernels-alist'.
+
+If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
+`jupyter--initialize-kernel'."
+  (let ((session-cons (assoc session jupyter--session-kernels-alist))
+        kernel)
+    (unless session-cons
+      (setq kernel (jupyter--initialize-kernel kernelspec session
+                                               cmd-args kernel-args)
+            session-cons (cons session kernel))
+      (push session-cons jupyter--session-kernels-alist)
+      (deferred:$
+        (deferred:callback-post
+          (jupyter--kernel-info-deferred kernel))
+        (deferred:nextc it #'jupyter--language)
+        (deferred:nextc it
+          (lambda (lang)
+            (push (cons session lang) jupyter--session-langs-alist)))
+        (deferred:set-next it
+          (jupyter--kernel-info-deferred kernel))
+        (deferred:nextc it #'jupyter--implementation)
+        (deferred:nextc it
+          (lambda (interpreter)
+            (jupyter--setup-inferior
+             interpreter (jupyter-struct-buffer kernel))))))
+    session-cons))
+
+(defun jupyter--finalize-session (session)
+  "Remove SESSION from internal alists and finalize the kernel."
+  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist))))
+    (setq jupyter--session-kernels-alist
+          (jupyter--assoc-delete-all
+           session jupyter--session-kernels-alist)
+          jupyter--session-langs-alist
+          (jupyter--assoc-delete-all
+           session jupyter--session-langs-alist))
+    (jupyter--finalize-kernel kernel)))
+
+(defun jupyter--setup-inferior (interp inf-buffer)
+  "Set up the appropriate major mode in INF-BUFFER according to INTERP."
+  (cond
+   ((string= interp "ipython")
+    (jupyter--setup-inferior-ipython inf-buffer))))
+
+;; Python specific
+
+(defvar python-shell--interpreter)
+(defvar python-shell--interpreter-args)
+(declare-function inferior-python-mode "python" nil)
+
+(defun jupyter--setup-inferior-ipython (inf-buffer)
+  "Set up inferior IPython mode in INF-BUFFER."
+  (let ((python-shell--interpreter "ipython")
+        (python-shell--interpreter-args
+         (mapconcat #'identity (cons "-i" jupyter-command-args) " ")))
+    (with-current-buffer inf-buffer
+      (inferior-python-mode))))
 
 ;; Low level
 
@@ -1139,18 +1200,20 @@ Pretty prints the results to *jupyter-debug* buffer."
   "Connect the current buffer to the kernel associated with SESSION.
 
 If no kernel is currently associated with SESSION, initialize one."
-  (interactive (completing-read
-                "Session: " jupyter--session-kernels-alist nil 'confirm))
-  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist)))
-        lang kernelspec)
+  (interactive (list
+                (completing-read
+                 "Session: " jupyter--session-kernels-alist nil 'confirm)))
+  (let* ((kernel-cons (assoc session jupyter--session-kernels-alist))
+         (kernel (cdr kernel-cons))
+         kernelspec)
     (unless kernel
-      (setq lang (substring (symbol-name major-mode)
-                            0 (- (length "-mode")))
-            kernelspec (completing-read
-                        "Kernel: " (jupyter--list-kernelspecs)
-                        nil t nil nil lang)
-            kernel (jupyter--initialize-kernel kernelspec session)))
-    (setq jupyter--current-kernel kernel)))
+      (setq kernelspec (completing-read
+                        "Start new kernel: " (jupyter--list-kernelspecs)
+                        nil t)
+            kernel-cons (jupyter--initialize-session session kernelspec)
+            kernel (cdr kernel-cons)))
+    (setq-local jupyter--current-kernel kernel)
+    (jupyter-mode +1)))
 
 (define-minor-mode jupyter-mode
   "Utilities for working with connected Jupyter kernels."
@@ -1158,6 +1221,22 @@ If no kernel is currently associated with SESSION, initialize one."
   (if jupyter-mode
       (ignore)
     (setq jupyter--current-kernel nil)))
+
+;; Python specific
+
+(defvar python-shell-buffer-name)
+(declare-function org-babel-python-without-earmuffs "ob-python" (session))
+
+(defvar jupyter-python-mode-hook)
+
+(defun jupyter--python-shell-buffer-name ()
+  "Set `python-shell-buffer-name' to the current kernel buffer."
+  (set (make-local-variable 'python-shell-buffer-name)
+       (org-babel-python-without-earmuffs
+        (buffer-name
+         (jupyter-struct-buffer jupyter--current-kernel)))))
+
+(add-hook 'jupyter-python-mode-hook #'jupyter--python-shell-buffer-name)
 
 ;; Company Completion
 
@@ -1434,69 +1513,18 @@ If no such buffer exists yet, create one with
 `jupyter--initialize-kernel'.  If Babel PARAMS includes
 a :kernel parameter, that will be passed to
 `jupyter--initialize-kernel'."
-  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist)))
-        (kernel-param (cdr (assq :kernel params))))
+  (let* ((session-cons (assoc session jupyter--session-kernels-alist))
+         (kernel (cdr session-cons))
+         (kernel-param (cdr (assq :kernel params))))
     (unless kernel
-      (setq kernel (jupyter--initialize-kernel kernel-param session))
-      (push (cons session kernel) jupyter--session-kernels-alist)
-      (deferred:$
-        (deferred:callback-post
-          (jupyter--kernel-info-deferred kernel))
-        (deferred:nextc it #'jupyter--language)
-        (deferred:nextc it
-          (lambda (lang)
-            (push (cons session lang) jupyter--session-langs-alist)))
-        (deferred:set-next it
-          (jupyter--kernel-info-deferred kernel))
-        (deferred:nextc it #'jupyter--implementation)
-        (deferred:nextc it
-          (lambda (interpreter)
-            (ob-jupyter--setup-inferior
-             interpreter (jupyter-struct-buffer kernel))))))
+      (setq session-cons (jupyter--initialize-session
+                          session kernel-param)
+            kernel (cdr session-cons)))
     (jupyter-struct-buffer kernel)))
-
-(defun ob-jupyter--setup-inferior (interp inf-buffer)
-  "Set up the appropriate major mode in INF-BUFFER according to INTERP."
-  (cond
-   ((string= interp "ipython")
-    (ob-jupyter--setup-inferior-ipython inf-buffer))))
-
-(defun ob-jupyter--cleanup-session (session)
-  "Remove SESSION from internal alists and finalize the kernel."
-  (let ((kernel (cdr (assoc session jupyter--session-kernels-alist))))
-    (setq jupyter--session-kernels-alist
-          (jupyter--assoc-delete-all
-           session jupyter--session-kernels-alist)
-          jupyter--session-langs-alist
-          (jupyter--assoc-delete-all
-           session jupyter--session-langs-alist))
-    (jupyter--assoc-delete-all session jupyter--session-langs-alist)
-    (jupyter--finalize-kernel kernel)))
 
 ;; Python specific
 
-(defun ob-jupyter--python-edit-prep (babel-info)
-  "Set up Python source buffers.
-
-Currently, this just sets `python-shell-buffer-name' to the
-kernel buffer associated with :session in BABEL-INFO."
-  (let* ((params (nth 2 babel-info))
-         (session (cdr (assq :session params))))
-    (set (make-local-variable 'python-shell-buffer-name)
-         (org-babel-python-without-earmuffs
-          (buffer-name
-           (org-babel-jupyter-initiate-session session params))))))
-
-(add-hook 'ob-jupyter-python-edit-prep-hook
-          #'ob-jupyter--python-edit-prep)
-
-(defun ob-jupyter--setup-inferior-ipython (inf-buffer)
-  "Set up inferior IPython mode in INF-BUFFER."
-  (let ((python-shell--interpreter "ipython")
-        (python-shell--interpreter-args
-         (mapconcat #'identity (cons "-i" jupyter-command-args) " ")))
-    (with-current-buffer inf-buffer
-      (inferior-python-mode))))
+(defvar ob-jupyter-python-edit-prep-hook)
 
 (provide 'jupyter)
 ;;; jupyter.el ends here
