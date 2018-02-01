@@ -39,11 +39,6 @@ In the future I will include this package on MELPA.  For now the code only lives
 *** jupyter-mode dependencies
 ~jupyter.el~ requires [[https://github.com/magnars/dash.el][dash]] and [[https://github.com/kiwanami/emacs-deferred][deferred]] for all operations.  Org Babel support obviously requires [[https://orgmode.org/worg/org-contrib/babel/][ob]], and company completion obviously requires [[https://github.com/company-mode/company-mode][company]].
 
-*** jupyter-mode conflicts
-Unfortunately, at this time ~jupyter-mode~ is incompatible with ~eldoc-mode~.  Please disable ~eldoc-mode~ in any buffers that you wish to connect to jupyter kernels.
-
-This bug is fixable, I just need a big block of time to work on it.
-
 * Basic Usage
 
 ** Execute code from Org Babel
