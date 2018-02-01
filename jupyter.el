@@ -1378,6 +1378,7 @@ IGNORED is not used."
 ;; Babel
 
 (declare-function org-src--get-lang-mode "org-src" (lang))
+(declare-function org-redisplay-inline-images "org" nil)
 
 (defun ob-jupyter--babel-output (execute-reply-alist)
   "Process the Jupyter EXECUTE-REPLY-ALIST to Babel :result-type 'output.
