@@ -483,7 +483,7 @@ Returns an `jupyter-struct'."
          (full-args (-flatten
                      (list jupyter-command-args
                            "-f" conn-file cmd-args
-                           (and kernelspec '("--kernel" kernelspec))
+                           (and kernelspec (list "--kernel" kernelspec))
                            kernel-args)))
          proc-buf json ctx iopub shell)
     ;; this creates the conn-file in `jupyter-runtime-dir'
