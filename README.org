@@ -79,9 +79,13 @@ Obtain completion candidates from the kernel with
   (add-to-list 'company-backends 'company-jupyter)
 #+END_SRC
 
-However, a word of caution.  Completion may be too slow for daily use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off using another completion backend, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python.
+However, a word of caution.  Completion may be too slow for daily use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off putting it behind other backends, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python, with
 
-That said, ~company-jedi~ doesn’t work so well with Babel source buffers, and so ~company-jupyter~ may be the better choice for you in that case.  Currently, completion only triggers for object methods, and results are cached.
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'company-backends 'company-jupyter t)
+#+END_SRC
+
+Currently, jupyter completion only triggers for object methods, and results are cached.
 
 As with most company backends, say =C-h= on a completion candidate to temporarily pop up documentation in a separate buffer.
 
