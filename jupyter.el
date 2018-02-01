@@ -1288,6 +1288,12 @@ to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
     (deferred:nextc it #'jupyter--matches)
     (deferred:nextc it callback)))
 
+(defun jupyter--company-candidates-sync (kernel pos code)
+  "Query KERNEL for completion candidates at POS in CODE."
+  (deferred:sync!
+    (jupyter--company-candidates-async
+     kernel pos code (lambda (x) x))))
+
 (defun jupyter--company-doc-buffer-sync (kernel pos code)
   "Query KERNEL for documentation at POS in CODE and return a doc buffer."
   ;; this could easily return a deferred object for use with company async
@@ -1313,10 +1319,12 @@ IGNORED is not used."
                    (not (company-in-string-or-comment))
                    (consp (company-grab-symbol-cons "\\."))
                    (jupyter--company-prefix kernel pos code)))
-      (candidates (cons :async
-                        (apply-partially
-                         #'jupyter--company-candidates-async
-                         kernel pos code)))
+      (candidates (if company--manual-action
+                      (jupyter--company-candidates-sync kernel pos code)
+                    (cons
+                     :async
+                     (apply-partially #'jupyter--company-candidates-async
+                                      kernel pos code))))
       (sorted t)
       (doc-buffer (jupyter--company-doc-buffer-sync
                    kernel (length arg) arg)))))
