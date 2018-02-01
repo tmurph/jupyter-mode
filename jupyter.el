@@ -1217,6 +1217,7 @@ Pretty prints the results to *jupyter-debug* buffer."
                  (shell-command-to-string
                   "jupyter-kernelspec list --json")))))
 
+;;;###autoload
 (defun jupyter-connect (session)
   "Connect the current buffer to the kernel associated with SESSION.
 
