@@ -61,7 +61,7 @@ If your code block will return a dataframe, specify =:results table= in the head
 
 The first row of data is processed according to =:colnames=.
  - if nil, don't do any column name processing
- - if “yes”, insert an 'hline after the first row of data
+ - if “yes”, insert a line after the first row of data
  - if “no”, exclude the first row a/k/a column names
  - default is “yes”
    
