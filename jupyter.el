@@ -1183,14 +1183,16 @@ If no kernel is currently associated with SESSION, initialize one."
     (deferred:nextc it #'jupyter--matches)
     (deferred:nextc it callback)))
 
-(defun jupyter--company-doc-buffer-async (kernel pos code callback)
-  "Query KERNEL for documentation at POS in CODE, put it in a buffer, and pass that buffer to CALLBACK."
-  (deferred:$
-    (deferred:callback-post
-      (jupyter--inspect-deferred kernel pos code 1000))
-    (deferred:nextc it #'jupyter--inspect-text)
-    (deferred:nextc it #'company-doc-buffer)
-    (deferred:nextc it callback)))
+(defun jupyter--company-doc-buffer-sync (kernel pos code)
+  "Query KERNEL for documentation at POS in CODE and return a doc buffer."
+  ;; this could easily return a deferred object for use with company async
+  ;; however, company does not support async doc buffer commands
+  (deferred:sync!
+    (deferred:$
+      (deferred:callback-post
+        (jupyter--inspect-deferred kernel pos code 1000))
+      (deferred:nextc it #'jupyter--inspect-text)
+      (deferred:nextc it #'company-doc-buffer))))
 
 (defun company-jupyter (command &optional arg &rest ignored)
   "Provide completion info according to COMMAND and ARG.
@@ -1212,10 +1214,8 @@ IGNORED is not used."
                          #'jupyter--company-candidates-async
                          kernel pos code)))
       (sorted t)
-      (doc-buffer (cons :async
-                        (apply-partially
-                         #'jupyter--company-doc-buffer-async
-                         kernel (length arg) arg))))))
+      (doc-buffer (jupyter--company-doc-buffer-sync
+                   kernel (length arg) arg)))))
 
 ;; Babel
 
