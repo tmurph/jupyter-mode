@@ -1243,6 +1243,12 @@ If no kernel is currently associated with SESSION, initialize one."
     (setq-local jupyter--current-kernel kernel)
     (jupyter-mode +1)))
 
+(defun jupyter-finalize-all ()
+  "Finalize all existing sessions."
+  (interactive)
+  (mapc #'jupyter--finalize-session
+        (mapcar #'car jupyter--session-kernels-alist)))
+
 (define-minor-mode jupyter-mode
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil
