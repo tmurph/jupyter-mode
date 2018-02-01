@@ -1243,6 +1243,13 @@ If no kernel is currently associated with SESSION, initialize one."
     (setq-local jupyter--current-kernel kernel)
     (jupyter-mode +1)))
 
+(defun jupyter-finalize-session (session)
+  "Finalize the kernel associated with SESSION."
+  (interactive (list
+                (completing-read
+                 "Session: " jupyter--session-kernels-alist nil t)))
+  (jupyter--finalize-session session))
+
 (defun jupyter-finalize-all ()
   "Finalize all existing sessions."
   (interactive)
