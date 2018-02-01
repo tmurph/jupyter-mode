@@ -1218,7 +1218,14 @@ If no kernel is currently associated with SESSION, initialize one."
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil
   (if jupyter-mode
-      (ignore)
+      (if jupyter--current-kernel
+          (let ((lang (substring (symbol-name major-mode)
+                                 0 (- (length "-mode")))))
+            (run-hooks (intern (format "jupyter-%s-mode-hook" lang))))
+        (error "No kernel associated with buffer")
+        (message (concat "You probably want to connect this buffer"
+                         " to a kernel with `jupyter-connect'."))
+        (jupyter-mode -1))
     (setq jupyter--current-kernel nil)))
 
 ;; Python specific
