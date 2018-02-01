@@ -106,7 +106,7 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 ;; External Definitions
 
 (autoload 'org-id-uuid "org-id")
-(autoload 'ansi-color-apply "ansi-color")
+(autoload 'ansi-color-apply-on-region "ansi-color")
 
 ;; Customize
 
@@ -904,9 +904,8 @@ Returns an alist like:
         (tb (cdr (assoc 'tracback error-alist))))
     (with-current-buffer buf
       (erase-buffer)
-      (mapc (lambda (line)
-              (insert (ansi-color-apply (format "%s\n" line))))
-            tb)
+      (mapc (lambda (line) (insert (format "%s\n" line))) tb)
+      (ansi-color-apply-on-region (point-min) (point-max))
       (current-buffer))))
 
 (defun jupyter--error-string (error-alist)
@@ -1303,7 +1302,12 @@ to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
       (deferred:callback-post
         (jupyter--inspect-deferred kernel pos code 1000))
       (deferred:nextc it #'jupyter--inspect-text)
-      (deferred:nextc it #'company-doc-buffer))))
+      (deferred:nextc it #'company-doc-buffer)
+      (deferred:nextc it
+        (lambda (buf)
+          (with-current-buffer buf
+            (ansi-color-apply-on-region (point-min) (point-max))
+            (current-buffer)))))))
 
 (defun company-jupyter (command &optional arg &rest ignored)
   "Provide completion info according to COMMAND and ARG.
