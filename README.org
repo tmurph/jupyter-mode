@@ -1,22 +1,20 @@
-#+TITLE:	ob-jupyter.el
+#+TITLE:	jupyter.el
 #+AUTHOR:	Trevor Murphy
 #+EMAIL:	trevor.m.murphy@gmail.com
 
-~ob-jupyter.el~ aims to make Emacs into a fully-functional [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] client.
+~jupyter-mode~ is a minor mode for communicating with [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] kernels.  You can start =jupyter-console= in a comint repl, create literate scripts with Org Babel, and obtain completion candidates from the kernel.
 
-It’s still very much a work-in-progress.
+* Install
 
-* Quickstart
-
-** Ensure you have Jupyter installed
+** Jupyter
 Just use [[https://pip.pypa.io/en/stable/][pip]]!
 
 #+BEGIN_SRC shell
   pip install jupyter
 #+END_SRC
 
-** Add emacs-ffi to your load-path
-I’m still learning Cask, so for right now this step is still manual.
+** emacs-ffi
+In the future I hope to automate this step with Cask.
 
 #+BEGIN_SRC shell
   git clone https://github.com/tromey/emacs-ffi.git
@@ -26,32 +24,87 @@ I’m still learning Cask, so for right now this step is still manual.
   cp ffi.el ffi-module.so /path/to/your/site/lisp
 #+END_SRC
 
-** Load ob-jupyter
+** jupyter-mode
+In the future I will include this package on MELPA.  For now the code only lives in Github.
 
-#+BEGIN_SRC emacs-lisp
-  (require 'ob-jupyter)
+#+BEGIN_SRC shell
+  git clone https://github.com/tmurph/jupyter-mode.git /path/to/site/lisp
 #+END_SRC
 
-** Play in IELM
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "/path/to/site/lisp/jupyter-mode")
+  (require 'jupyter)
+#+END_SRC
+
+*** jupyter-mode dependencies
+~jupyter.el~ requires [[https://github.com/magnars/dash.el][dash]] and [[https://github.com/kiwanami/emacs-deferred][deferred]] for all operations.  Org Babel support obviously requires [[https://orgmode.org/worg/org-contrib/babel/][ob]], and company completion obviously requires [[https://github.com/company-mode/company-mode][company]].
+
+*** jupyter-mode conflicts
+Unfortunately, at this time ~jupyter-mode~ is incompatible with ~eldoc-mode~.  Please disable ~eldoc-mode~ in any buffers that you wish to connect to jupyter kernels.
+
+This bug is fixable, I just need a big block of time to work on it.
+
+* Basic Usage
+
+** Execute code from Org Babel
+Enable jupyter as a Babel source language with
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'org-src-lang-modes '("jupyter" . fundamental))
+#+END_SRC
+
+Jupyter source blocks *must* include a =:session= header argument.  A default value will be provided if you do not specify one.
+
+If your code block will return a dataframe, specify =:results table= in the header.  This will trigger special output formatting based on the =:colnames= and =:rownames= arguments.
+
+The first row of data is processed according to =:colnames=.
+ - if nil, don't do any column name processing
+ - if “yes”, insert an 'hline after the first row of data
+ - if “no”, exclude the first row a/k/a column names
+ - default is “yes”
+   
+The first column of data is processed according to =:rownames=
+ - if nil or “yes”, don't do any row name processing
+ - if “no”, exclude the first column a/k/a index names
+ - default is “no”
+
+If your code block will produce a graph, specify =:results file= in the header.  A random file name will be generated and the image will be put there.  Alternatively, if the source block has a =#+NAME= then that will be used as the file name base.  You may specify =:output-dir= to create the file in a specific directory.  In instances where the kernel may return multiple image formats, you may specify =:file-ext= to select which one you want.  Finally, you may specify the exact file name you want with =:file=.
+
+** Connect a kernel to a script buffer
+While ~org-edit-src-code~ will automatically set up the minor mode in edit buffers, sometimes you may choose to send code from other buffers to the same kernel.
+
+~jupyter-connect~ is the preferred way to enable the mode manually.  If there are already kernel buffers running in the background, you will be prompted to connect to one.  If you do not choose an existing kernel (or if none are running yet) you will be prompted for a session name and kernel spec, and a new kernel will be started.
+
+** Getting completion in connected buffers
+Obtain completion candidates from the kernel with
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'company-backends 'company-jupyter)
+#+END_SRC
+
+However, a word of caution.  Completion may be too slow for daily use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off using another completion backend, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python.
+
+That said, ~company-jedi~ doesn’t work so well with Babel source buffers, and so ~company-jupyter~ may be the better choice for you in that case.  Currently, completion only triggers for object methods, and results are cached.
+
+As with most company backends, say =C-h= on a completion candidate to temporarily pop up documentation in a separate buffer.
+
+* Get your hands dirty in IELM
 Say =M-x ielm= to get to an interactive emacs lisp repl.  Try the following!
 
 #+BEGIN_SRC emacs-lisp
-  ELISP> (setq kernel-struct (ob-jupyter-initialize-kernel "python" "test"))
-  ;; => [cl-struct-ob-jupyter-struct ... ]
+  ELISP> (setq kernel-struct (jupyter--initialize-kernel "python" "test"))
+  ;; => [cl-struct-jupyter-struct ... ]
 #+END_SRC
 
 As a side effect, this creates a =*Jupyter:test*= comint buffer and connects
 to an inferior Jupyter console process.  But ignore that buffer for now.
 
 #+BEGIN_SRC emacs-lisp
-  ELISP> (let ((alist (ob-jupyter-kernel-info-request-alist))
-               (shell (ob-jupyter-struct-shell kernel-struct))
-               (iopub (ob-jupyter-struct-iopub kernel-struct))
-               (key (ob-jupyter-struct-key kernel-struct))
+  ELISP> (let ((alist (jupyter--kernel-info-request-alist))
                (timeout-msec 1000))
            (deferred:sync!
-             (ob-jupyter-roundtrip-deferred
-              alist shell iopub key timeout-msec)))
+             (jupyter--roundtrip-deferred
+              alist kernel-struct timeout-msec)))
   ;; => ((shell
   ;;      ((header ...)
   ;;       (parent_header ...)
@@ -69,17 +122,26 @@ to an inferior Jupyter console process.  But ignore that buffer for now.
 Compare the output with Jupyter’s [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#general-message-format][general message format]], then dive into the format of messages on the [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-shell-router-dealer-channel][shell channel]] and the [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-iopub-pub-sub-channel][iopub channel]].
 
 The following message factories are available:
-- ~ob-jupyter-kernel-info-request-alist~
-- ~ob-jupyter-execute-request-alist~
-- ~ob-jupyter-inspect-request-alist~
-- ~ob-jupyter-complete-request-alist~
-- ~ob-jupyter-shutdown-request-alist~
+- ~jupyter--kernel-info-request-alist~
+- ~jupyter--execute-request-alist~
+- ~jupyter--inspect-request-alist~
+- ~jupyter--complete-request-alist~
+- ~jupyter--shutdown-request-alist~
 
-Once you execute code from the IELM repl, flip to the comint buffer and check to see that it had the expected side effects.
+  Try sending import code via an execute request, and flip to the comint buffer to see that your code had the intended effect!
+
+  Also, if the kernel ever seems to get stuck, try flushing the output a few times.
+
+#+BEGIN_SRC emacs-lisp
+  ELISP> (jupyter--flush-kernel kernel-struct)
+  ;; display an output buffer
+#+END_SRC
 
 * TODO Next Steps
-So much …
-- [ ] actually connect roundtrip communication routines to Org Babel!
-- [ ] implement company completion with asynchronous completion requests
-- [ ] write more tests!
-- [ ] use kernel-info-request to determine the appropriate major mode for the inferior comint buffer
+- [X] actually connect roundtrip communication routines to Org Babel!
+- [X] implement company completion with asynchronous completion requests
+- [ ] write backend / frontend tests … maybe mock objects are my friend?
+- [X] use kernel-info-request to determine the appropriate major mode for the inferior comint buffer
+- [ ] fix eldoc bug
+- [ ] implement R and Julia support … the framework is there, just not the content
+- [ ] instrument completion … how much can I get from speeding up my code?
