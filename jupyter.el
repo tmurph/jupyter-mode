@@ -137,6 +137,11 @@ A shorter wait time increases Emacs CPU load."
   :type 'integer
   :group 'jupyter)
 
+(defcustom ob-jupyter-redisplay-images nil
+  "If t, call `org-redisplay-inline-images' after any source block inserts a file."
+  :type 'boolean
+  :group 'jupyter)
+
 ;; ZMQ ffi
 
 (define-ffi-library zmq "libzmq")
@@ -1558,6 +1563,8 @@ PARAMS are the Org Babel parameters associated with the block."
          (code (org-babel-expand-body:jupyter body params var-lines))
          (result-params (cdr (assq :result-params params)))
          (extract-fn (ob-jupyter--babel-extract-fn params))
+         (redisplay (and (member "file" result-params)
+                         ob-jupyter-redisplay-images))
          (src-buf (current-buffer))
          (src-point (point)))
     (if (not kernel)
@@ -1572,7 +1579,8 @@ PARAMS are the Org Babel parameters associated with the block."
             (with-current-buffer src-buf
               (save-excursion
                 (goto-char src-point)
-                (org-babel-insert-result result result-params))))))
+                (org-babel-insert-result result result-params))
+              (when redisplay (org-redisplay-inline-images))))))
       "*")))
 
 ;;; This function is expected to return the session buffer.
