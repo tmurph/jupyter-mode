@@ -1097,15 +1097,31 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
     (lambda (reply) (setq jupyter--deferred-result reply)))
   (deferred:callback d))
 
+(defun jupyter--flush-kernel (kernel)
+  "Receive any backed-up messages from KERNEL.
+
+Pretty prints the results to *jupyter-debug* buffer."
+  (let ((shell-port (jupyter-struct-shell kernel))
+        (iopub-port (jupyter-struct-iopub kernel))
+        (key (jupyter-struct-key kernel))
+        (debug-buf (get-buffer-create "*jupyter-debug*")))
+    (deferred:$
+      (deferred:parallel
+        `((shell . ,(deferred:callback-post
+                      (jupyter--recv-all-deferred
+                       shell-port #'jupyter--shell-last-p key 1000)))
+          (iopub . ,(deferred:callback-post
+                      (jupyter--recv-all-deferred
+                       iopub-port #'jupyter--iopub-last-p key 1000)))))
+      (deferred:nextc it
+        (lambda (alist)
+          (with-current-buffer debug-buf (erase-buffer))
+          (pp alist debug-buf)
+          (display-buffer debug-buf))))))
+
 ;;; Emacs
 
 ;; Minor Mode
-
-(defvar jupyter--session-kernels-alist nil
-  "Internal alist of (SESSION . KERNEL) pairs.")
-
-(defvar jupyter--session-langs-alist nil
-  "Internal alist of (SESSION . LANGUAGE) pairs.")
 
 (defvar-local jupyter--current-kernel nil
   "The Jupyter kernel struct associated with the current buffer.")
