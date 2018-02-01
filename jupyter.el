@@ -1464,7 +1464,8 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
 
 (defvar org-babel-default-header-args:jupyter
   '((:colnames . "yes")
-    (:rownames . "no")))
+    (:rownames . "no")
+    (:session . "default")))
 
 (defun org-babel-edit-prep:jupyter (babel-info)
   "Set up the edit buffer per BABEL-INFO.
