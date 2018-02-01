@@ -1240,17 +1240,45 @@ If no kernel is currently associated with SESSION, initialize one."
 
 ;; Company Completion
 
-(defun jupyter--company-prefix-async (kernel pos code callback)
-  "Query KERNEL for the completion prefix at POS in CODE and pass the result to CALLBACK."
-  (deferred:$
-    (deferred:callback-post
-      (jupyter--complete-deferred kernel pos code))
-    (deferred:nextc it #'jupyter--cursor-pos)
-    (deferred:nextc it
-      (lambda (cursor-cons)
-        (substring-no-properties
-         code (car cursor-cons) (cdr cursor-cons))))
-    (deferred:nextc it callback)))
+(defun jupyter--company-prefix-sync (kernel pos code)
+  "Query KERNEL for the completion prefix at POS in CODE."
+  ;; this could easily return a deferred object for use with company async
+  ;; however, company does not support async prefix commands
+  (deferred:sync!
+    (deferred:$
+      (deferred:callback-post
+        (jupyter--complete-deferred kernel pos code))
+      (deferred:nextc it #'jupyter--cursor-pos)
+      (deferred:nextc it
+        (lambda (cursor-cons)
+          (substring-no-properties
+           code (car cursor-cons) (cdr cursor-cons)))))))
+
+(defvar jupyter--company-prefix-cache ""
+  "The most recent prefix returned by `jupyter--company-prefix-sync'.")
+
+(defun jupyter--company-prefix (kernel pos code)
+  "Return the prefix for company completion, or nil for no completion.
+
+First check the result of `company-grab-symbol-cons' agains
+`jupyter--company-prefix-cache'.  If that check fails, fall back
+to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
+  (let* ((prefix-re (replace-regexp-in-string
+                     "\\." "\\." ; literal replace, lol
+                     jupyter--company-prefix-cache nil t))
+         (symbol-or-cons (company-grab-symbol-cons
+                          prefix-re
+                          (length jupyter--company-prefix-cache)))
+         (prefix-matched (consp symbol-or-cons))
+         (trivial-prefix (string= jupyter--company-prefix-cache ""))
+         result)
+    (if (and (not trivial-prefix) prefix-matched)
+        (setq result (concat jupyter--company-prefix-cache
+                             (car symbol-or-cons)))
+      (setq result (jupyter--company-prefix-sync kernel pos code)
+            jupyter--company-prefix-cache
+            (replace-regexp-in-string "[^.]*\\'" "" result)))
+    result))
 
 (defun jupyter--company-candidates-async (kernel pos code callback)
   "Query KERNEL for completion candidates at POS in CODE and pass the results to CALLBACK."
@@ -1283,9 +1311,8 @@ IGNORED is not used."
       (interactive (company-begin-backend 'company-jupyter))
       (prefix (and jupyter-mode kernel
                    (not (company-in-string-or-comment))
-                   (cons :async
-                         (apply-partially #'jupyter--company-prefix-async
-                                          kernel pos code))))
+                   (consp (company-grab-symbol-cons "\\."))
+                   (jupyter--company-prefix kernel pos code)))
       (candidates (cons :async
                         (apply-partially
                          #'jupyter--company-candidates-async
