@@ -50,7 +50,7 @@ Enable jupyter as a Babel source language with
 
 Jupyter source blocks *must* include a =:session= header argument.  A default value will be provided if you do not specify one.
 
-You may specify a =:kernel= argument.  The default is nil, which instructs the =jupyter-console= program to use its default.
+You may specify a =:kernel= argument.  The default is python.
 
 If your code block will return a dataframe, specify =:results table= in the header.  This will trigger special output formatting based on the =:colnames= and =:rownames= arguments.
 
