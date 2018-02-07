@@ -137,6 +137,18 @@ A shorter wait time increases Emacs CPU load."
   :type 'integer
   :group 'jupyter)
 
+(defcustom jupyter-timeout-msec 1000
+  "The wait time (in msec) before timing out polls to Jupyter sockets.
+
+WARNING: if you set this to nil, polls never time out.  At that
+point, if for any reason the kernel does not respond to a
+request then you will hog lots of Emacs resources polling forever.
+
+To recover in that case, call `deferred:clear-queue'."
+  :type '(choice (integer :tag "Timeout msec")
+                 (const :tag "Never time out" nil))
+  :group 'jupyter)
+
 (defcustom ob-jupyter-redisplay-images nil
   "If t, call `org-redisplay-inline-images' after any source block inserts a file."
   :type 'boolean
@@ -616,7 +628,8 @@ Returns a deferred object that can be chained with `deferred:$'."
     (deferred:lambda (elapsed)
       (cond
        ((zmq--check-for-receive socket) t)
-       ((and timeout elapsed (> elapsed timeout))
+       ((and elapsed (or timeout jupyter-timeout-msec)
+             (> elapsed (or timeout jupyter-timeout-msec)))
         (error "Socket poll timed out"))
        (t (deferred:next self (+ (or elapsed 0) jupyter-poll-msec)))))))
 
