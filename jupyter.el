@@ -377,7 +377,7 @@ Returns a list of the various parts."
         (while more
           (setq num-bytes (zmq--recv socket recv-str num 0))
           (when (= -1 num-bytes)
-            (error "Could not receive a message"))
+            (error (zmq--error-string)))
           (push (substring (ffi-get-c-string recv-str) 0 num-bytes) ret)
           (zmq--getsockopt socket ZMQ-RCVMORE zmore size)
           (setq more (ffi--mem-ref zmore :bool)))))
@@ -385,13 +385,15 @@ Returns a list of the various parts."
 
 (defun zmq--send-multi (str-list socket)
   "Send STR-LIST as a multi-part message to SOCKET."
-  (let (str flag)
+  (let (str flag written)
     (while (setq flag 0
                  str (pop str-list))
       (when str-list
         (setq flag ZMQ-SNDMORE))
       (with-ffi-string (s str)
-        (zmq--send socket s (length str) flag)))))
+        (setq written (zmq--send socket s (length str) flag))
+        (when (= written -1)
+          (error (zmq--error-string)))))))
 
 (defun zmq--check-for-receive (socket)
   "Check if a message may be received from SOCKET."
