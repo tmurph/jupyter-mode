@@ -1279,7 +1279,7 @@ If no kernel is currently associated with SESSION, initialize one."
           (let ((lang (substring (symbol-name major-mode)
                                  0 (- (length "-mode")))))
             (run-hooks (intern (format "jupyter-%s-mode-hook" lang))))
-        (error "No kernel associated with buffer")
+        (user-error "No kernel associated with buffer")
         (message (concat "You probably want to connect this buffer"
                          " to a kernel with `jupyter-connect'."))
         (jupyter-mode -1))
@@ -1559,7 +1559,7 @@ active kernel, to determine the underlying expansion language."
          (var-fn (intern (format "org-babel-variable-assignments:%s" lang)))
          (var-fn (if (fboundp var-fn) var-fn #'ignore)))
     (if (not lang)
-        (error "No kernel language for variable assignment")
+        (user-error "No kernel language for variable assignment")
       (funcall var-fn params))))
 
 (defun org-babel-expand-body:jupyter (body params &optional var-lines)
@@ -1576,7 +1576,7 @@ If provided, include VAR-LINES before BODY."
                         expand-fn
                       #'org-babel-expand-body:generic)))
     (if (not lang)
-        (error "No kernel language for code expansion")
+        (user-error "No kernel language for code expansion")
       (funcall expand-fn body params var-lines))))
 
 (defun org-babel-execute:jupyter (body params)
@@ -1594,7 +1594,7 @@ PARAMS are the Org Babel parameters associated with the block."
          (src-buf (current-buffer))
          (src-point (point)))
     (if (not kernel)
-        (error "No running kernel to execute src block")
+        (user-error "No running kernel to execute src block")
       (deferred:$
         (jupyter--execute-deferred kernel code)
         (deferred:nextc it #'jupyter--raise-error-maybe)
