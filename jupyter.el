@@ -1619,13 +1619,20 @@ PARAMS are the Org Babel parameters associated with the block."
         (jupyter--execute-deferred kernel code)
         (deferred:nextc it #'jupyter--raise-error-maybe)
         (deferred:nextc it extract-fn)
-        (deferred:nextc it
-          (lambda (result)
-            (with-current-buffer src-buf
-              (save-excursion
-                (goto-char src-point)
-                (org-babel-insert-result result result-params))
-              (when redisplay (org-redisplay-inline-images))))))
+        (deferred:set-next it
+          (make-deferred
+           :callback (lambda (result)
+                       (with-current-buffer src-buf
+                         (save-excursion
+                           (goto-char src-point)
+                           (org-babel-insert-result result result-params))
+                         (when redisplay (org-redisplay-inline-images))))
+           :errorback (lambda (e)
+                        (with-current-buffer src-buf
+                          (save-excursion
+                            (goto-char src-point)
+                            (org-babel-remove-result)))
+                        (deferred:resignal e)))))
       "*")))
 
 ;;; This function is expected to return the session buffer.
