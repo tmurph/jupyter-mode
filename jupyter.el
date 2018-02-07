@@ -1602,16 +1602,19 @@ If provided, include VAR-LINES before BODY."
 PARAMS are the Org Babel parameters associated with the block."
   (let* ((session (cdr (assq :session params)))
          (kernel (cdr (assoc session jupyter--session-kernels-alist)))
-         (var-lines (org-babel-variable-assignments:jupyter params))
-         (code (org-babel-expand-body:jupyter body params var-lines))
          (result-params (cdr (assq :result-params params)))
          (extract-fn (ob-jupyter--babel-extract-fn params))
          (redisplay (and (member "file" result-params)
                          ob-jupyter-redisplay-images))
          (src-buf (current-buffer))
-         (src-point (point)))
+         (src-point (point))
+         var-lines code)
     (if (not kernel)
         (user-error "No running kernel to execute src block")
+      ;; do this here, after the kernel error check
+      ;; if we do this in the let form, we get confusing error messages
+      (setq var-lines (org-babel-variable-assignments:jupyter params)
+            code (org-babel-expand-body:jupyter body params var-lines))
       (deferred:$
         (jupyter--execute-deferred kernel code)
         (deferred:nextc it #'jupyter--raise-error-maybe)
