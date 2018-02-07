@@ -543,6 +543,22 @@ Returns an `jupyter-struct'."
   (zmq--close (jupyter-struct-shell struct))
   (zmq--ctx-destroy (jupyter-struct-context struct)))
 
+(defun jupyter--initialize-session-1 (kernel session)
+  "Ask KERNEL for info to set up Emacs objects for SESSION."
+  (deferred:$
+    (jupyter--kernel-info-deferred kernel)
+    (deferred:nextc it #'jupyter--implementation)
+    (deferred:nextc it
+      (lambda (interpreter)
+        (jupyter--setup-inferior
+         interpreter (jupyter-struct-buffer kernel)))))
+  (deferred:$
+    (jupyter--kernel-info-deferred kernel)
+    (deferred:nextc it #'jupyter--language)
+    (deferred:nextc it
+      (lambda (lang)
+        (push (cons session lang) jupyter--session-langs-alist)))))
+
 (defun jupyter--initialize-session
     (session &optional kernelspec cmd-args kernel-args)
   "Return the internal pair (SESSION . kernel-struct).
@@ -560,20 +576,7 @@ If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
                                                cmd-args kernel-args)
             session-cons (cons session kernel))
       (push session-cons jupyter--session-kernels-alist)
-      (deferred:$
-        (deferred:callback-post
-          (jupyter--kernel-info-deferred kernel))
-        (deferred:nextc it #'jupyter--language)
-        (deferred:nextc it
-          (lambda (lang)
-            (push (cons session lang) jupyter--session-langs-alist)))
-        (deferred:set-next it
-          (jupyter--kernel-info-deferred kernel))
-        (deferred:nextc it #'jupyter--implementation)
-        (deferred:nextc it
-          (lambda (interpreter)
-            (jupyter--setup-inferior
-             interpreter (jupyter-struct-buffer kernel))))))
+      (jupyter--initialize-session-1 kernel session))
     session-cons))
 
 (defun jupyter--finalize-session (session)
