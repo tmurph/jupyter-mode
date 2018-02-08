@@ -1028,15 +1028,6 @@ Returns a deferred object that can be chained with `deferred:$'."
   (deferred:new
     (lambda () (jupyter--send-alist-sync alist socket key))))
 
-(defun jupyter--recv-alist-deferred (socket &optional key)
-  "Defer receiving a Jupyter reply alist from SOCKET.
-
-If KEY is provided, authenticate messages with HMAC-SHA256 and KEY.
-
-Returns a deferred object that can be chained with `deferred:$'."
-  (deferred:new
-    (lambda () (jupyter--recv-alist-sync socket key))))
-
 (defun jupyter--recv-all-deferred
     (socket parent-id last-p &optional key timeout)
   "Defer receiving a list of Jupyter reply alists from SOCKET.
@@ -1057,8 +1048,8 @@ Returns a deferred object that can be chained with `deferred:$'."
       (deferred:$
         (deferred:callback-post
           (jupyter--poll-deferred socket timeout))
-        (deferred:set-next it
-          (jupyter--recv-alist-deferred socket key))
+        (deferred:nextc it
+          (lambda () (jupyter--recv-alist-sync socket key)))
         (deferred:nextc it
           (lambda (alist)
             (when (or (not parent-id)
