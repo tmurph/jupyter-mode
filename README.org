@@ -4,9 +4,9 @@
 
 ~jupyter-mode~ is a minor mode for communicating with [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] kernels.  You can start =jupyter-console= in a comint repl, create literate scripts with Org Babel, and obtain completion candidates from the kernel.
 
-You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-switch-to-session~ or start a session in an appropriate code buffer with ~jupyter-connect~.
+You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-switch-to-session~ or start a session from an appropriate code buffer with ~jupyter-connect~.
 
-NOTE: Currently, due to communication issues with the starting kernel, sometimes the inferior kernel buffer will not receive the correct major mode.  Instead it will remain in ~comint-mode~.  To remedy this, call ~jupyter-fixup-session~.
+NOTE: Sometimes, due to communication issues with the starting kernel, the inferior kernel buffer will not receive the correct major mode.  Instead it will remain in ~comint-mode~.  To remedy this, call ~jupyter-fixup-session~.
 
 * Install
 
@@ -151,3 +151,4 @@ The following message factories are available:
 - [ ] implement R and Julia support … the framework is there, just not the content
 - [ ] instrument completion … how much can I get from speeding up my code?
 - [ ] fix comint startup bug
+- [ ] maybe support fontification and eldoc in org source blocks?
