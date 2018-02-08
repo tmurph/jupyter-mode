@@ -1019,15 +1019,6 @@ Block until the receive completes."
        (jupyter--authenticate-message key)
        (jupyter--alist-from-message)))
 
-(defun jupyter--send-alist-deferred (alist socket &optional key)
-  "Defer sending a Jupyter request ALIST to SOCKET.
-
-If KEY is provided, sign messages with HMAC-SHA256 and KEY.
-
-Returns a deferred object that can be chained with `deferred:$'."
-  (deferred:new
-    (lambda () (jupyter--send-alist-sync alist socket key))))
-
 (defun jupyter--recv-all-deferred
     (socket parent-id last-p &optional key timeout)
   "Defer receiving a list of Jupyter reply alists from SOCKET.
@@ -1079,8 +1070,8 @@ receive on that socket takes longer than TIMEOUT msec.
 
 Queues the deferred request and reply behavior, then returns the
 deferred reply object, which can be chained with `deferred:$'."
-  (deferred:callback-post
-    (jupyter--send-alist-deferred alist shell-socket key))
+  (deferred:next
+    (lambda () (jupyter--send-alist-sync alist shell-socket key)))
   (deferred:parallel
     `((shell . ,(deferred:callback-post
                   (jupyter--recv-all-deferred
