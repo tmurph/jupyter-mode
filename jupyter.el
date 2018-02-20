@@ -536,16 +536,16 @@ Returns an `jupyter-struct'."
                             :context ctx
                             :key (cdr (assq 'key json)))))
 
-(defun jupyter--finalize-kernel (struct)
-  "Forcibly stop the kernel in STRUCT and clean up associated ZMQ objects."
-  (let ((proc (jupyter-struct-process struct)))
+(defun jupyter--finalize-kernel (kernel)
+  "Forcibly stop KERNEL and clean up associated ZMQ objects."
+  (let ((proc (jupyter-struct-process kernel)))
     (when (process-live-p proc)
       (kill-process proc)
       (sleep-for 0 5)))
-  (kill-buffer (jupyter-struct-buffer struct))
-  (zmq--close (jupyter-struct-iopub struct))
-  (zmq--close (jupyter-struct-shell struct))
-  (zmq--ctx-destroy (jupyter-struct-context struct)))
+  (kill-buffer (jupyter-struct-buffer kernel))
+  (zmq--close (jupyter-struct-iopub kernel))
+  (zmq--close (jupyter-struct-shell kernel))
+  (zmq--ctx-destroy (jupyter-struct-context kernel)))
 
 (defun jupyter--initialize-session-1 (kernel session)
   "Ask KERNEL for info to set up Emacs objects for SESSION."
