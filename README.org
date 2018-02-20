@@ -152,3 +152,4 @@ The following message factories are available:
 - [ ] instrument completion … how much can I get from speeding up my code?
 - [ ] fix comint startup bug
 - [ ] maybe support fontification and eldoc in org source blocks?
+- [ ] update documentation, see https://www.youtube.com/watch?v=azf6yzuJt54
