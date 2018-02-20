@@ -526,7 +526,9 @@ Returns an `jupyter-struct'."
                        (z ""))
       (zmq--connect shell s)
       (zmq--connect iopub i)
-      (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0))
+      (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0)
+      ;; give the subscribe time to propagate
+      (sleep-for 0.01))
     (jupyter-struct--create :name name
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
