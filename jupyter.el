@@ -140,9 +140,9 @@ A shorter wait time increases Emacs CPU load."
 (defcustom jupyter-timeout-msec 1000
   "The wait time (in msec) before timing out polls to Jupyter sockets.
 
-WARNING: if you set this to nil, polls never time out.  At that
-point, if for any reason the kernel does not respond to a
-request then you will hog lots of Emacs resources polling forever.
+WARNING: if you set this to nil, polls never time out.  If for
+any reason the kernel does not respond to a request then Emacs
+will poll forever, hogging resources.
 
 To recover in that case, call `deferred:clear-queue'."
   :type '(choice (integer :tag "Timeout msec")
