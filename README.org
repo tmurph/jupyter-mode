@@ -2,7 +2,7 @@
 #+AUTHOR:	Trevor Murphy
 #+EMAIL:	trevor.m.murphy@gmail.com
 
-~jupyter-mode~ is a minor mode for communicating with [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] kernels.  You can start =jupyter-console= in a comint repl, create literate scripts with Org Babel, and obtain completion candidates from the kernel.
+~jupyter-mode~ is an Emacs minor mode for communicating with [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] kernels.  You can start =jupyter-console= in a comint repl, create literate scripts with Org Babel, and obtain completion candidates from the kernel.
 
 You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-switch-to-session~ or start a session from an appropriate code buffer with ~jupyter-connect~.
 
