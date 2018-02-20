@@ -149,10 +149,15 @@ To recover in that case, call `deferred:clear-queue'."
                  (const :tag "Never time out" nil))
   :group 'jupyter)
 
+(defgroup ob-jupyter nil
+  "Settings for Org Babel interaction with Jupyter kernels."
+  :prefix "ob-jupyter-"
+  :group 'jupyter)
+
 (defcustom ob-jupyter-redisplay-images nil
   "If t, call `org-redisplay-inline-images' after any source block inserts a file."
   :type 'boolean
-  :group 'jupyter)
+  :group 'ob-jupyter)
 
 ;; ZMQ ffi
 
