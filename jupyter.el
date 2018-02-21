@@ -532,7 +532,7 @@ Returns an `jupyter-struct'."
     (jupyter-struct--create :name name
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
-                            :conn-file-name conn-file
+                            :conn-file-name full-file
                             :iopub iopub
                             :shell shell
                             :context ctx
@@ -547,7 +547,8 @@ Returns an `jupyter-struct'."
   (kill-buffer (jupyter-struct-buffer kernel))
   (zmq--close (jupyter-struct-iopub kernel))
   (zmq--close (jupyter-struct-shell kernel))
-  (zmq--ctx-destroy (jupyter-struct-context kernel)))
+  (zmq--ctx-destroy (jupyter-struct-context kernel))
+  (delete-file (jupyter-struct-conn-file-name kernel)))
 
 (defun jupyter--initialize-session-1 (kernel session)
   "Ask KERNEL for info to set up Emacs objects for SESSION."
