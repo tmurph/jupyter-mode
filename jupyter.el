@@ -459,8 +459,8 @@ Returns a list of the various parts."
 
 `jupyter-struct-conn-file-name'
 
-`jupyter-struct-iopub' A ZMQ socket object connected to the
-  Jupyter IOPub port.
+`jupyter-struct-iopub-url' The endpoint to dynamically connect
+  ZMQ socket objects to the Jupyter IOPub port.
 
 `jupyter-struct-shell' A ZMQ socket object connected to the
 Jupyter Shell port.
@@ -473,10 +473,32 @@ to the Jupyter server."
   (process nil :read-only t)
   (buffer nil :read-only t)
   (conn-file-name nil :read-only t)
-  (iopub nil :read-only t)
+  (iopub-url nil :read-only t)
   (shell nil :read-only t)
   (context nil :read-only t)
   (key nil :read-only t))
+
+(defun jupyter--initialize-iopub (kernel)
+  "Connect a new `ZMQ-SUB' socket to the IOPub URL of KERNEL.
+
+We pull this into its own function, rather than doing it within
+`jupyter--initialize-kernel', because we use multiple short-lived
+subscriber sockets when sending multiple requests to the kernel
+at once.  This allows us to use ZMQ to multiplex replies, rather
+than having to implement that ourselves."
+  (let* ((ctx (jupyter-struct-context kernel))
+         (iopub (zmq--socket ctx ZMQ-SUB)))
+    (with-ffi-strings ((i (jupyter-struct-iopub-url kernel))
+                       (z ""))
+      (zmq--connect iopub i)
+      (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0)
+      ;; give the subscribe time to propagate
+      (sleep-for 0 10))
+    iopub))
+
+(defun jupyter--finalize-iopub (iopub-socket)
+  "Close IOPUB-SOCKET."
+  (zmq--close iopub-socket))
 
 (defun jupyter--initialize-kernel
     (kernelspec name &optional cmd-args kernel-args)
@@ -504,7 +526,7 @@ Returns an `jupyter-struct'."
                            "-f" conn-file cmd-args
                            (and kernelspec (list "--kernel" kernelspec))
                            kernel-args)))
-         proc-buf json ctx iopub shell)
+         proc-buf json ctx iopub-url shell)
     ;; this creates the conn-file in `jupyter-runtime-dir'
     (setq proc-buf (apply #'make-comint-in-buffer proc-name
                           proc-buffer-name jupyter-command
@@ -512,28 +534,22 @@ Returns an `jupyter-struct'."
     (while (not (file-exists-p full-file)) (sleep-for 0 5))
     ;; so we can read the file here
     (setq json (json-read-file full-file)
+          iopub-url (format "%s://%s:%s"
+                            (cdr (assq 'transport json))
+                            (cdr (assq 'ip json))
+                            (cdr (assq 'iopub_port json)))
           ctx (zmq--ctx-new)
-          shell (zmq--socket ctx ZMQ-DEALER)
-          iopub (zmq--socket ctx ZMQ-SUB))
+          shell (zmq--socket ctx ZMQ-DEALER))
     (with-ffi-strings ((s (format "%s://%s:%s"
                                   (cdr (assq 'transport json))
                                   (cdr (assq 'ip json))
-                                  (cdr (assq 'shell_port json))))
-                       (i (format "%s://%s:%s"
-                                  (cdr (assq 'transport json))
-                                  (cdr (assq 'ip json))
-                                  (cdr (assq 'iopub_port json))))
-                       (z ""))
-      (zmq--connect shell s)
-      (zmq--connect iopub i)
-      (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0)
-      ;; give the subscribe time to propagate
-      (sleep-for 0.01))
+                                  (cdr (assq 'shell_port json)))))
+      (zmq--connect shell s))
     (jupyter-struct--create :name name
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
                             :conn-file-name full-file
-                            :iopub iopub
+                            :iopub-url iopub-url
                             :shell shell
                             :context ctx
                             :key (cdr (assq 'key json)))))
@@ -545,7 +561,6 @@ Returns an `jupyter-struct'."
       (kill-process proc)
       (sleep-for 0 5)))
   (kill-buffer (jupyter-struct-buffer kernel))
-  (zmq--close (jupyter-struct-iopub kernel))
   (zmq--close (jupyter-struct-shell kernel))
   (zmq--ctx-destroy (jupyter-struct-context kernel))
   (delete-file (jupyter-struct-conn-file-name kernel)))
@@ -1098,12 +1113,22 @@ If TIMEOUT is provided, stop receiving from a socket if any
 receive on that socket takes longer than TIMEOUT msec.
 
 Returns a deferred object that can be chained with `deferred:$'."
-  (jupyter--roundtrip-deferred-1
-   alist
-   (jupyter-struct-shell kernel)
-   (jupyter-struct-iopub kernel)
-   (jupyter-struct-key kernel)
-   timeout))
+  (let ((iopub-socket (jupyter--initialize-iopub kernel)))
+    (deferred:$
+      (jupyter--roundtrip-deferred-1
+       alist
+       (jupyter-struct-shell kernel)
+       iopub-socket
+       (jupyter-struct-key kernel)
+       timeout)
+      (deferred:set-next it
+        (make-deferred
+         :callback (lambda (reply)
+                     (jupyter--finalize-iopub iopub-socket)
+                     reply)
+         :errorback (lambda (err)
+                      (jupyter--finalize-iopub iopub-socket)
+                      (deferred:resignal err)))))))
 
 (defun jupyter--kernel-info-deferred (kernel &optional timeout)
   "Fire a Jupyter kernel info request / reply roundtrip.
@@ -1192,7 +1217,7 @@ Handy for debugging.  Set it with `jupyter--sync-deferred'.")
 
 Pretty prints the results to *jupyter-debug* buffer."
   (let ((shell-port (jupyter-struct-shell kernel))
-        (iopub-port (jupyter-struct-iopub kernel))
+        (iopub-port (jupyter--initialize-iopub kernel))
         (key (jupyter-struct-key kernel))
         (debug-buf (get-buffer-create "*jupyter-debug*")))
     (deferred:$
@@ -1207,6 +1232,7 @@ Pretty prints the results to *jupyter-debug* buffer."
                        #'jupyter--iopub-last-p key 1000)))))
       (deferred:nextc it
         (lambda (alist)
+          (jupyter--finalize-iopub iopub-port)
           (with-current-buffer debug-buf (erase-buffer))
           (pp alist debug-buf)
           (display-buffer debug-buf))))))
