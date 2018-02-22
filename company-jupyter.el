@@ -60,7 +60,7 @@
 (defun jupyter--company-prefix (kernel pos code)
   "Return the prefix for company completion, or nil for no completion.
 
-First check the result of `company-grab-symbol-cons' agains
+First check the result of `company-grab-symbol-cons' against
 `jupyter--company-prefix-cache'.  If that check fails, fall back
 to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
   (let* ((prefix-re (replace-regexp-in-string
