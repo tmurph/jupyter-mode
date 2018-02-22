@@ -1269,6 +1269,7 @@ If no kernel is currently associated with SESSION, initialize one."
       (setq kernelspec (completing-read
                         "Start new kernel: " (jupyter--list-kernelspecs)
                         nil t)
+            kernelspec (if (string= kernelspec "") nil kernelspec)
             kernel-cons (jupyter--initialize-session session kernelspec)
             kernel (cdr kernel-cons))
       (display-buffer (jupyter-struct-buffer kernel)))
