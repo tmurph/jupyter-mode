@@ -6,8 +6,6 @@
 
 You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-switch-to-session~ or start a session from an appropriate code buffer with ~jupyter-connect~.
 
-NOTE: Sometimes, due to communication issues with the starting kernel, the inferior kernel buffer will not receive the correct major mode.  Instead it will remain in ~comint-mode~.  To remedy this, call ~jupyter-fixup-session~.
-
 * Install
 
 ** Jupyter
@@ -150,6 +148,6 @@ The following message factories are available:
 - [X] fix eldoc bug
 - [ ] implement R and Julia support … the framework is there, just not the content
 - [ ] instrument completion … how much can I get from speeding up my code?
-- [ ] fix comint startup bug
+- [X] fix comint startup bug
 - [ ] maybe support fontification and eldoc in org source blocks?
 - [ ] update documentation, see https://www.youtube.com/watch?v=azf6yzuJt54
