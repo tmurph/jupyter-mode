@@ -554,6 +554,17 @@ Returns an `jupyter-struct'."
                             :context ctx
                             :key (cdr (assq 'key json)))))
 
+(defun jupyter--wait-for-ready (kernel)
+  "Loop until KERNEL is ready to send and receive messages.
+
+Per the Jupyter developers, a fresh kernel may take a while
+before it's ready to send and receive messages.  They check by
+simply sending kernel_info_requests until they get a valid
+response."
+  (while (not (jupyter--validate-kernel-info
+               (deferred:sync!
+                 (jupyter--kernel-info-deferred kernel))))))
+
 (defun jupyter--finalize-kernel (kernel)
   "Forcibly stop KERNEL and clean up associated ZMQ objects."
   (let ((proc (jupyter-struct-process kernel)))
@@ -598,6 +609,7 @@ If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
                                                cmd-args kernel-args)
             session-cons (cons session kernel))
       (push session-cons jupyter--session-kernels-alist)
+      (jupyter--wait-for-ready kernel)
       (jupyter--initialize-session-1 kernel session))
     session-cons))
 
@@ -907,6 +919,16 @@ If RESTART, restart the kernel after the shutdown."
        (jupyter--shell-content-from-alist)
        (assoc 'implementation)
        (cdr)))
+
+(defun jupyter--validate-kernel-info (kernel-info-reply-alist)
+  "Return t if KERNEL-INFO-REPLY-ALIST is a complete reply.
+
+A reply is considered \"complete\" if
+ 1. it contains a non-trivial 'shell component
+ 2. its 'iopub component contains an idle execution state message"
+  (let ((iopub-content (cdr (assoc 'iopub kernel-info-reply-alist))))
+    (and (jupyter--shell-content-from-alist kernel-info-reply-alist)
+         (cl-some #'jupyter--iopub-last-p iopub-content))))
 
 (defun jupyter--status (execute-reply-alist)
   "Extract the execution status from EXECUTE-REPLY-ALIST.
