@@ -6,7 +6,8 @@
 
 You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-switch-to-session~ or start a session from an appropriate code buffer with ~jupyter-connect~.
 
-* Install
+* How To Install
+These steps assume you understand the basics of Emacs’ load path and are comfortable compiling a simple C module with [[https://www.gnu.org/software/make/][make]].
 
 ** Jupyter
 Just use [[https://pip.pypa.io/en/stable/][pip]]!
@@ -16,7 +17,7 @@ Just use [[https://pip.pypa.io/en/stable/][pip]]!
 #+END_SRC
 
 ** emacs-ffi
-In the future I hope to automate this step with Cask.
+You’ll need to manually compile tromey’s [[https://github.com/tromey/emacs-ffi][emacs-ffi]] module.
 
 #+BEGIN_SRC shell
   git clone https://github.com/tromey/emacs-ffi.git
@@ -26,30 +27,196 @@ In the future I hope to automate this step with Cask.
   cp ffi.el ffi-module.so /path/to/your/site/lisp
 #+END_SRC
 
+In the future I will automate this step with Cask.
+
 ** jupyter-mode
-In the future I will include this package on MELPA.  For now the code only lives in Github.
+Pull down the code from this github.
 
 #+BEGIN_SRC shell
   git clone https://github.com/tmurph/jupyter-mode.git /path/to/site/lisp
 #+END_SRC
+
+Put the following lines in your init file and evaluate them.
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'load-path "/path/to/site/lisp/jupyter-mode")
   (require 'jupyter)
 #+END_SRC
 
-*** jupyter-mode dependencies
-~jupyter.el~ requires [[https://github.com/magnars/dash.el][dash]] and [[https://github.com/kiwanami/emacs-deferred][deferred]] for all operations.  Org Babel support obviously requires [[https://orgmode.org/worg/org-contrib/babel/][ob]], and company completion obviously requires [[https://github.com/company-mode/company-mode][company]].
-
-* Basic Usage
-
-** Execute code from Org Babel
-Enable jupyter as a Babel source language with
+If you’d like to enable Org Babel and Company support, add the following and evaluate them as well.
 
 #+BEGIN_SRC emacs-lisp
+  (require 'ob-jupyter)
+  (add-to-list 'org-src-lang-modes '("jupyter" . fundamental))
+
+  (require 'company-jupyter)
+#+END_SRC
+
+In the future I will include the whole package on MELPA.
+
+** jupyter-mode dependencies
+~jupyter.el~ requires [[https://github.com/magnars/dash.el][dash]] and [[https://github.com/kiwanami/emacs-deferred][deferred]] for all operations.  ~ob-juypter.el~ requires [[https://orgmode.org/worg/org-contrib/babel/][ob]], and ~company-jupyter.el~ requires [[https://github.com/company-mode/company-mode][company]].
+
+If you don’t already have these packages, install them via your preferred method.  I recommend ~M-x package-install~.
+
+* Introductory Tutorials
+
+** Jupyter Mode
+We’re going to write a script to numerically integrate a simple function.
+
+For the purposes of this tutorial, we’re going to assume [[http://www.numpy.org/][numpy]] and [[https://www.scipy.org/][scipy]] are globally installed on your system.  If you prefer to work in a virtual environment, scroll [[*How to install ipykernel in a virtualenv][down]] for a guide to setting up a python kernel in a virtual environment.
+
+Create a new file with ~M-x find-file RET my-script-name.py RET RET~.  Visually inspect the major mode of the file; the file should be in Python mode.
+
+If you are using the globally installed default kernel, say ~M-x jupyter-connect RET test-session-name RET RET~.  If you are using a python kernel you created in a virtual environment, say ~M-x jupyter-connect RET test-session-name RET your-virtualenv-kernel-name RET~.  The file buffer should then show that Jupyter minor mode is active, and Emacs should display a new buffer running the Jupyter console in Inferior Python mode.
+
+Copy-and-paste the following code into the file buffer:
+
+#+BEGIN_SRC python
+  import numpy as np
+  from scipy.integrate import quad
+  from __future__ import print_function
+
+  def f(x):
+      return (x-3)*(x-5)*(x-7)+85
+
+  a, b = 1, 8 # the left and right boundaries
+  N = 5 # the number of points
+  xint = np.linspace(a, b, N)
+  yint = f(xint)
+
+  integral, error = quad(f, a, b)
+  integral_trapezoid = sum( (xint[1:] - xint[:-1]) * (yint[1:] + yint[:-1]) ) / 2
+  print("The integral is:", integral, "+/-", error)
+  print("The trapezoid approximation with", len(xint), "points is:", integral_trapezoid)
+#+END_SRC
+
+Send the script code to the Jupyter console process with =C-c C-c=.  You should see the following text appear at the prompt:
+
+#+BEGIN_EXAMPLE
+  The integral is: 565.2499999999999 +/- 6.275535646693696e-12
+  The trapezoid approximation with 5 points is: 559.890625
+#+END_EXAMPLE
+
+** Org Babel Jupyter
+We’re going to numerically integrate a simple function and plot a graph from an Org file via Org Babel.
+
+We’re going to assume [[http://www.numpy.org/][numpy]], [[https://www.scipy.org/][scipy]], and [[https://matplotlib.org/][matplotlib]] are globally installed on your system.  If you prefer to work in a virtual environment, scroll [[*How to install ipykernel in a virtualenv][down]] for a guide to setting up a python kernel in a virtual environment.
+
+Ensure you have enabled Org Babel support for Jupyter by adding the following lines to your init file and evaluating them:
+
+#+BEGIN_SRC emacs-lisp
+  (require 'ob-jupyter)
   (add-to-list 'org-src-lang-modes '("jupyter" . fundamental))
 #+END_SRC
 
+Create a new file with ~M-x find-file RET my-literate-script-name.org RET RET~.  Visually inspect the major mode of the file; the file should be in Org mode.
+
+If you are using a python kernel you created in a virtual environment, insert the following header at the top of the file:
+
+#+BEGIN_SRC org
+  ,#+PROPERTY: header-args:jupyter  :kernel your-virtualenv-kernel-name
+#+END_SRC
+
+If you are using the globally installed default kernel, you don’t need any such header line.
+
+Copy and paste the following text into the file buffer:
+
+#+BEGIN_SRC org
+  All source code blocks share a session, so this import will affect all later code.
+
+  ,#+BEGIN_SRC jupyter
+    from __future__ import print_function
+  ,#+END_SRC
+
+  Define =f(x)=, the simple function we’re going to integrate.
+
+  ,#+BEGIN_SRC jupyter
+    def f(x):
+        return (x-3)*(x-5)*(x-7)+85
+  ,#+END_SRC
+
+  We’re also going to approximate the integral via the trapezoid rule.
+
+  ,#+BEGIN_SRC jupyter
+    import numpy as np
+    a, b = 1, 8 # the left and right boundaries
+    N = 5 # the number of points
+    xint = np.linspace(a, b, N)
+    yint = f(xint)
+  ,#+END_SRC
+
+  This code block will print to stdout, which we capture with the =:results output= header argument.  
+
+  ,#+BEGIN_SRC jupyter :results output
+    from scipy.integrate import quad
+    integral, error = quad(f, a, b)
+    integral_trapezoid = sum( (xint[1:] - xint[:-1]) * (yint[1:] + yint[:-1]) ) / 2
+    print("The integral is:", integral, "+/-", error)
+    print("The trapezoid approximation with", len(xint), "points is:", integral_trapezoid)
+  ,#+END_SRC
+
+  This code block will produce a plot of the function and our trapezoid approximation to the integral.  We tell Org Babel to save the plot to a file (which Emacs can display inline) with the =:results file= header argument.
+
+  ,#+BEGIN_SRC jupyter :results file
+    %matplotlib inline
+    import matplotlib.pyplot as plt
+
+    x = np.linspace(0, 10, 200)
+    y = f(x)
+
+    plt.plot(x, y, lw=2)
+    plt.axis([0, 9, 0, 140])
+    plt.fill_between(xint, 0, yint, facecolor='gray', alpha=0.4)
+    plt.text(0.5 * (a + b), 30,r"$\int_a^b f(x)dx$", horizontalalignment='center', fontsize=20);
+  ,#+END_SRC
+#+END_SRC
+
+Say ~M-x org-babel-execute-buffer RET~ to execute all code blocks in sequence and update the buffer with results.  Alternatively, evaluate each code block manually by positioning your cursor anywhere on the block and pressing =C-c C-c=.
+
+After executing any source code, you may switch to the Jupyter console by positioning your cursor on any source code block and saying ~M-x org-babel-switch-to-session~.
+
+** Company Jupyter
+Enable completion candidates from the kernel with
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'company-backends 'company-jupyter)
+#+END_SRC
+
+However, a word of caution.  Completion may be too slow for on-the-fly use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off putting it behind other backends, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python, with
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'company-backends 'company-jupyter t)
+#+END_SRC
+
+Currently, Jupyter completion only triggers on-the-fly for object methods, and results are cached.  You may of course initiate completion at any time by saying ~M-x company-jupyter~.
+
+As with most company backends, say =C-h= on a completion candidate to temporarily pop up documentation in a separate buffer.
+
+* Working with Kernels
+
+** How to install ipykernel in a virtualenv
+This is not about a part of ~jupyter.el~, per se.  Python virtual environments are an important part of many workflows, however, and I worry that the creation of Jupyter kernels in a virtual environment is still occasionally seen as black magic.  This is how I do it.
+
+Before executing the following lines in your shell, either set the environment variables =$VENV_DIR= and =$KERNEL_NAME= to your existing virtual environment directory and desired kernel name, or replace the references with your desired values.
+
+#+BEGIN_SRC shell
+  cd "$VENV_DIR"
+  source bin/activate
+  pip3 install ipykernel
+  python3 -m ipykernel install --user --name "$KERNEL_NAME" --display-name "Python ($KERNEL_NAME)"
+#+END_SRC
+
+Now ~jupyter-connect~ will offer you the choice of =$KERNEL_NAME= when you are starting a new session, and you may specify an Org Babel header argument of =:kernel $KERNEL_NAME= to use that kernel for code block execution.
+
+** What about R and Julia?
+Coming soon!  Install any of the [[https://github.com/jupyter/jupyter/wiki/Jupyter-kernels][available Jupyter kernels]] on your system and ensure that you can see them at the terminal with ~jupyter kernelspec list~.  
+
+You can then reference those kernels from ~jupyter-connect~ or the Org Babel =:kernel= header argument.  Code execution and Company completion should work just fine, however there is not yet much support for the inferior REPLs.
+
+* Reference Guides
+
+** Org Babel Header Arguments
 Jupyter source blocks *must* include a =:session= header argument.  A default value will be provided if you do not specify one.
 
 You may specify a =:kernel= argument.  The default is python.
@@ -69,77 +236,6 @@ The first column of data is processed according to =:rownames=
 
 If your code block will produce a graph, specify =:results file= in the header.  A random file name will be generated and the image will be put there.  Alternatively, if the source block has a =#+NAME= then that will be used as the file name base.  You may specify =:output-dir= to create the file in a specific directory.  In instances where the kernel may return multiple image formats, you may specify =:file-ext= to select which one you want.  Finally, you may specify the exact file name you want with =:file=.
 
-** Connect a kernel to a script buffer
-While ~org-edit-src-code~ will automatically set up the minor mode in edit buffers, sometimes you may choose to send code from other buffers to the same kernel.
-
-~jupyter-connect~ is the preferred way to enable the mode manually.  If there are already kernel buffers running in the background, you will be prompted to connect to one.  If you do not choose an existing kernel (or if none are running yet) you will be prompted for a session name and kernel spec, and a new kernel will be started.
-
-** Getting completion in connected buffers
-Obtain completion candidates from the kernel with
-
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'company-backends 'company-jupyter)
-#+END_SRC
-
-However, a word of caution.  Completion may be too slow for on-the-fly use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off putting it behind other backends, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python, with
-
-#+BEGIN_SRC emacs-lisp
-  (add-to-list 'company-backends 'company-jupyter t)
-#+END_SRC
-
-Currently, jupyter completion only triggers for object methods, and results are cached.
-
-As with most company backends, say =C-h= on a completion candidate to temporarily pop up documentation in a separate buffer.
-
-* Get your hands dirty in IELM
-Say =M-x ielm= to get to an interactive emacs lisp repl.  Try the following!
-
-#+BEGIN_SRC emacs-lisp
-  ELISP> (setq kernel-struct (jupyter--initialize-kernel "python" "test"))
-  ;; => [cl-struct-jupyter-struct ... ]
-#+END_SRC
-
-As a side effect, this creates a =*Jupyter:test*= comint buffer and connects
-to an inferior Jupyter console process.  But ignore that buffer for now.
-
-#+BEGIN_SRC emacs-lisp
-  ELISP> (let ((alist (jupyter--kernel-info-request-alist))
-               (timeout-msec 1000))
-           (deferred:sync!
-             (jupyter--roundtrip-deferred
-              alist kernel-struct timeout-msec)))
-  ;; => ((shell
-  ;;      ((header ...)
-  ;;       (parent_header ...)
-  ;;       (metadata ...)
-  ;;       (content ...)))
-  ;;     (iopub
-  ;;      ((header ...)
-  ;;       (parent_header ...)
-  ;;       (metadata ...)
-  ;;       (content ...)))
-  ;;      ((header ...)
-  ;;       ...)))
-#+END_SRC
-
-Compare the output with Jupyter’s [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#general-message-format][general message format]], then dive into the format of messages on the [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-shell-router-dealer-channel][shell channel]] and the [[http://jupyter-client.readthedocs.io/en/stable/messaging.html#messages-on-the-iopub-pub-sub-channel][iopub channel]].
-
-The following message factories are available:
-- ~jupyter--kernel-info-request-alist~
-- ~jupyter--execute-request-alist~
-- ~jupyter--inspect-request-alist~
-- ~jupyter--complete-request-alist~
-- ~jupyter--shutdown-request-alist~
-
-  Try sending import code via an execute request, and flip to the comint buffer to see that your code had the intended effect!
-
-  Also, if the kernel ever seems to get stuck, try flushing the output a few times.
-
-#+BEGIN_SRC emacs-lisp
-  ELISP> (jupyter--flush-kernel kernel-struct)
-  ;; display an output buffer
-#+END_SRC
-
 * TODO Next Steps
 - [X] actually connect roundtrip communication routines to Org Babel!
 - [X] implement company completion with asynchronous completion requests
@@ -149,5 +245,27 @@ The following message factories are available:
 - [ ] implement R and Julia support … the framework is there, just not the content
 - [ ] instrument completion … how much can I get from speeding up my code?
 - [X] fix comint startup bug
+- [ ] refactor / deep dive fixup PUB / SUB model
+  - I’m getting bitten by the “slow subscriber” problem
+  - http://zguide.zeromq.org/page:all#Getting-the-Message-Out
+  - right now I’m just sleeping for a tenth of a second whenever I connect a new SUB socket … but that’s explicitly contra-indicated in the article
+  - eventually, come back and implement their proposed solutions
+  - some sort of proxy?  where I have one proxy sub that lives forever, and a proxy pub that handles ephemeral connections?
 - [ ] maybe support fontification and eldoc in org source blocks?
-- [ ] update documentation, see https://www.youtube.com/watch?v=azf6yzuJt54
+- [-] update documentation, see https://www.divio.com/en/blog/documentation/
+  - [X] need a tutorial
+    - learning-oriented
+    - allows a newcomer to get started
+    - is a lesson
+  - [X] need a how-to guide
+    - goal-oriented
+    - shows how to solve a specific problem
+    - is a series of steps
+  - [ ] explanation
+    - is understanding-oriented
+    - explains
+    - provides background and context
+  - [ ] reference
+    - information-oriented
+    - describes the machinery
+    - is accurate and complete
