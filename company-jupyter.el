@@ -120,7 +120,8 @@ IGNORED is not used."
       (interactive (company-begin-backend 'company-jupyter))
       (prefix (and jupyter-mode kernel
                    (not (company-in-string-or-comment))
-                   (consp (company-grab-symbol-cons "\\."))
+                   (or company--manual-action
+                       (consp (company-grab-symbol-cons "\\.")))
                    (jupyter--company-prefix kernel pos code)))
       (candidates (if company--manual-action
                       (jupyter--company-candidates-sync kernel pos code)
