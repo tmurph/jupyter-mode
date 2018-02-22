@@ -81,7 +81,7 @@ Obtain completion candidates from the kernel with
   (add-to-list 'company-backends 'company-jupyter)
 #+END_SRC
 
-However, a word of caution.  Completion may be too slow for daily use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off putting it behind other backends, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python, with
+However, a word of caution.  Completion may be too slow for on-the-fly use, as it requires several roundtrip requests of the kernel.  For this reason you may be better off putting it behind other backends, such as [[https://github.com/syohex/emacs-company-jedi][company-jedi]] for python, with
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'company-backends 'company-jupyter t)
