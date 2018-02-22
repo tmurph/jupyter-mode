@@ -470,7 +470,7 @@ than having to implement that ourselves."
       (zmq--connect iopub i)
       (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0)
       ;; give the subscribe time to propagate
-      (sleep-for 0 10))
+      (sleep-for 0 100))
     iopub))
 
 (defun jupyter--finalize-iopub (iopub-socket)
