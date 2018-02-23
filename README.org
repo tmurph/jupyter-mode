@@ -4,7 +4,7 @@
 
 ~jupyter-mode~ is an Emacs minor mode for communicating with [[https://jupyter.readthedocs.io/en/latest/][Jupyter]] kernels.  You can start =jupyter-console= in a comint repl, create literate scripts with Org Babel, and obtain completion candidates from the kernel.
 
-You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-switch-to-session~ or start a session from a script buffer with ~jupyter-connect~.
+You should not start ~jupyter-mode~ from a mode hook, however.  This will not set up the appropriate variables for a full session.  Instead, either set up an Org Babel source block and call ~org-babel-initiate-session~ or start a session from a script buffer with ~jupyter-connect~.
 
 * How To Install
 These steps assume you understand the basics of Emacs’ load path and are comfortable compiling a simple C module with [[https://www.gnu.org/software/make/][make]].
@@ -181,9 +181,9 @@ Copy and paste the following text into the file buffer:
   ,#+END_SRC
 #+END_SRC
 
-Say ~M-x org-babel-execute-buffer RET~ to execute all code blocks in sequence and update the buffer with results.  Alternatively, evaluate each code block manually by positioning your cursor anywhere on the block and pressing =C-c C-c=.
+Initiate the session by placing your cursor on any source code block and saying ~M-x org-babel-initiate-session RET~.
 
-After executing any source code, you may switch to the Jupyter console by positioning your cursor on any source code block and saying ~M-x org-babel-switch-to-session~.
+Say ~M-x org-babel-execute-buffer RET~ to execute all code blocks in sequence and update the buffer with results.  Alternatively, evaluate each code block manually by positioning your cursor anywhere on the block and pressing =C-c C-c=.
 
 ** Company Jupyter
 First, a word of caution.  Completion may be too slow for on-the-fly use, as it requires several roundtrip requests of the kernel.
