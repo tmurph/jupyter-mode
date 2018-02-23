@@ -29,6 +29,11 @@ You’ll need to manually compile tromey’s [[https://github.com/tromey/emacs-f
 
 In the future I will automate this step with Cask.
 
+** jupyter-mode dependencies
+~jupyter.el~ requires [[https://github.com/magnars/dash.el][dash]] and [[https://github.com/kiwanami/emacs-deferred][deferred]] for all operations.  ~ob-juypter.el~ requires [[https://orgmode.org/worg/org-contrib/babel/][ob]], and ~company-jupyter.el~ requires [[https://github.com/company-mode/company-mode][company]].
+
+If you don’t already have these packages, install them via your preferred method.  I recommend ~M-x package-install~.
+
 ** jupyter-mode
 Pull down the code.
 
@@ -54,11 +59,6 @@ If you’d like to enable Org Babel and Company support, add the following and e
 #+END_SRC
 
 In the future I will include the whole package on MELPA.
-
-** jupyter-mode dependencies
-~jupyter.el~ requires [[https://github.com/magnars/dash.el][dash]] and [[https://github.com/kiwanami/emacs-deferred][deferred]] for all operations.  ~ob-juypter.el~ requires [[https://orgmode.org/worg/org-contrib/babel/][ob]], and ~company-jupyter.el~ requires [[https://github.com/company-mode/company-mode][company]].
-
-If you don’t already have these packages, install them via your preferred method.  I recommend ~M-x package-install~.
 
 * Introductory Tutorials
 
