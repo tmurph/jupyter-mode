@@ -247,8 +247,7 @@ PARAMS are the Org Babel parameters associated with the block."
          (extract-fn (ob-jupyter--babel-extract-fn params))
          (redisplay (and (member "file" result-params)
                          ob-jupyter-redisplay-images))
-         (src-buf (current-buffer))
-         (src-point (point))
+         (src-marker (point-marker))
          var-lines code)
     (if (not kernel)
         (user-error "No running kernel to execute src block")
@@ -263,16 +262,18 @@ PARAMS are the Org Babel parameters associated with the block."
         (deferred:set-next it
           (make-deferred
            :callback (lambda (result)
-                       (with-current-buffer src-buf
-                         (save-excursion
-                           (goto-char src-point)
-                           (org-babel-insert-result result result-params))
+                       (with-current-buffer (marker-buffer src-marker)
+                         (save-mark-and-excursion
+                          (goto-char src-marker)
+                          (org-babel-insert-result result result-params)
+                          (set-marker src-marker nil))
                          (when redisplay (org-redisplay-inline-images))))
            :errorback (lambda (e)
-                        (with-current-buffer src-buf
-                          (save-excursion
-                            (goto-char src-point)
-                            (org-babel-remove-result)))
+                        (with-current-buffer (marker-buffer src-marker)
+                          (save-mark-and-excursion
+                           (goto-char src-marker)
+                           (org-babel-remove-result)
+                           (set-marker src-marker nil)))
                         (deferred:resignal e)))))
       "*")))
 
