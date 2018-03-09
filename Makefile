@@ -7,6 +7,6 @@ test:
 	  -f ert-run-tests-batch-and-exit
 
 install:
-	cp jupyter.el* ~/.emacs.d/site-lisp/
+	cp jupyter.el company-jupyter.el ob-jupyter.el ~/.emacs.d/site-lisp/
 
 .PHONY: all test install
