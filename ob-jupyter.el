@@ -171,7 +171,8 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
       (lambda (alist)
         (ob-jupyter--babel-value-to-file alist file output-dir file-ext)))
      (t
-      #'ob-jupyter--babel-value))))
+      (lambda (alist)
+        (org-babel-script-escape (ob-jupyter--babel-value alist)))))))
 
 (defvar org-babel-default-header-args:jupyter
   '((:colnames . "yes")
