@@ -220,7 +220,7 @@ Jupyter source blocks *must* include a =:session= header argument.  A default va
 
 You may specify a =:kernel= argument.  The default is python.
 
-If your code block will return a dataframe, specify =:results table= in the header.  This will trigger special output formatting based on the =:colnames= and =:rownames= arguments.
+If your code block will return a dataframe, specify =:results dataframe= in the header.  This will trigger special output formatting based on the =:colnames= and =:rownames= arguments.
 
 The first row of data is processed according to =:colnames=.
  - if nil, don't do any column name processing

@@ -164,7 +164,7 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
     (cond
      ((eq result-type 'output)
       #'ob-jupyter--babel-output)
-     ((or (member "table" result-params) (member "vector" result-params))
+     ((member "dataframe" result-params)
       (lambda (alist)
         (ob-jupyter--babel-value-to-table alist rownames colnames)))
      ((member "file" result-params)
