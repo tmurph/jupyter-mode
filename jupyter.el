@@ -512,15 +512,15 @@ Returns an `jupyter-struct'."
     ;; so we can read the file here
     (setq json (json-read-file full-file)
           iopub-url (format "%s://%s:%s"
-                            (cdr (assq 'transport json))
-                            (cdr (assq 'ip json))
-                            (cdr (assq 'iopub_port json)))
+                            (alist-get 'transport json)
+                            (alist-get 'ip json)
+                            (alist-get 'iopub_port json))
           ctx (zmq--ctx-new)
           shell (zmq--socket ctx ZMQ-DEALER))
     (with-ffi-strings ((s (format "%s://%s:%s"
-                                  (cdr (assq 'transport json))
-                                  (cdr (assq 'ip json))
-                                  (cdr (assq 'shell_port json)))))
+                                  (alist-get 'transport json)
+                                  (alist-get 'ip json)
+                                  (alist-get 'shell_port json))))
       (zmq--connect shell s))
     (jupyter-struct--create :name name
                             :process (get-buffer-process proc-buf)
@@ -529,7 +529,7 @@ Returns an `jupyter-struct'."
                             :iopub-url iopub-url
                             :shell shell
                             :context ctx
-                            :key (cdr (assq 'key json)))))
+                            :key (alist-get 'key json))))
 
 (defun jupyter--wait-for-ready (kernel)
   "Loop until KERNEL is ready to send and receive messages.
