@@ -508,6 +508,7 @@ Returns an `jupyter-struct'."
     (setq proc-buf (apply #'make-comint-in-buffer proc-name
                           proc-buffer-name jupyter-command
                           nil full-args))
+    (set-process-query-on-exit-flag (get-buffer-process proc-buf) nil)
     (while (not (file-exists-p full-file)) (sleep-for 0 5))
     ;; so we can read the file here
     (setq json (json-read-file full-file)
@@ -546,8 +547,7 @@ response."
   "Forcibly stop KERNEL and clean up associated ZMQ objects."
   (let ((proc (jupyter-struct-process kernel)))
     (when (process-live-p proc)
-      (kill-process proc)
-      (sleep-for 0 5)))
+      (kill-process proc)))
   (kill-buffer (jupyter-struct-buffer kernel))
   (zmq--close (jupyter-struct-shell kernel))
   (zmq--ctx-destroy (jupyter-struct-context kernel))
