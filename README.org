@@ -222,15 +222,15 @@ You may specify a =:kernel= argument.  The default is python.
 
 If your code block will return a dataframe, specify =:results dataframe= in the header.  This will trigger special output formatting based on the =:colnames= and =:rownames= arguments.
 
-The first row of data is processed according to =:colnames=.
+The first row of data (typically this is the dataframe column names) will be processed according to =:colnames=.
  - if nil, don't do any column name processing
- - if “yes”, insert a line after the first row of data
- - if “no”, exclude the first row a/k/a column names
+ - if “yes”, insert a line after the column names
+ - if “no”, exclude the column names
  - default is “yes”
    
-The first column of data is processed according to =:rownames=
- - if nil or “yes”, don't do any row name processing
- - if “no”, exclude the first column a/k/a index names
+The first column of data (typically this is the dataframe index) will be processed according to =:rownames=
+ - if nil or “yes”, don't do any index processing
+ - if “no”, exclude the index
  - default is “no”
 
 If your code block will produce a graph, specify =:results file= in the header.  A random file name will be generated and the image will be put there.  Alternatively, if the source block has a =#+NAME= then that will be used as the file name base.  You may specify =:output-dir= to create the file in a specific directory.  In instances where the kernel may return multiple image formats, you may specify =:file-ext= to select which one you want.  Finally, you may specify the exact file name you want with =:file=.
