@@ -72,7 +72,7 @@ Currently this returns the contents of the \"stdout\" stream."
        (assoc 'text/plain)
        (cdr)))
 
-(defun ob-jupyter--babel-value-to-table
+(defun ob-jupyter--babel-value-to-dataframe
     (execute-reply-alist &optional rownames colnames)
   "Process the Jupyter EXECUTE-REPLY-ALIST and return a list-of-lists.
 
@@ -166,7 +166,7 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
       #'ob-jupyter--babel-output)
      ((member "dataframe" result-params)
       (lambda (alist)
-        (ob-jupyter--babel-value-to-table alist rownames colnames)))
+        (ob-jupyter--babel-value-to-dataframe alist rownames colnames)))
      ((member "file" result-params)
       (lambda (alist)
         (ob-jupyter--babel-value-to-file alist file output-dir file-ext)))
