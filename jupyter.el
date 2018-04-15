@@ -1306,16 +1306,20 @@ If that happens, call this function to try again."
 (define-minor-mode jupyter-mode
   "Utilities for working with connected Jupyter kernels."
   nil " Jupyter" nil
-  (if jupyter-mode
-      (if jupyter--current-kernel
-          (let ((lang (substring (symbol-name major-mode)
-                                 0 (- (length "-mode")))))
-            (run-hooks (intern (format "jupyter-%s-mode-hook" lang))))
-        (user-error "No kernel associated with buffer")
-        (message (concat "You probably want to connect this buffer"
-                         " to a kernel with `jupyter-connect'."))
-        (jupyter-mode -1))
-    (setq jupyter--current-kernel nil)))
+  (let* ((lang (substring (symbol-name major-mode)
+                          0 (- (length "-mode"))))
+         (hook-var (intern (format "jupyter-%s-mode-hook" lang))))
+    (if jupyter-mode
+        (if jupyter--current-kernel
+            (run-hooks hook-var)
+          (jupyter-mode -1)
+          (message "%s"
+                   (concat "No active Jupyter kernel for current buffer"
+                           "\n\n"
+                           "Use `jupyter-connect' to connect to a "
+                           "kernel session")))
+      (setq jupyter--current-kernel nil)
+      (run-hooks hook-var))))
 
 ;; Python specific
 
