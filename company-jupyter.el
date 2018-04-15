@@ -91,7 +91,7 @@ to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
   "Query KERNEL for completion candidates at POS in CODE."
   (deferred:sync!
     (jupyter--company-candidates-async
-     kernel pos code (lambda (x) x))))
+     kernel pos code #'identity)))
 
 (defun jupyter--company-doc-buffer-sync (kernel pos code)
   "Query KERNEL for documentation at POS in CODE and return a doc buffer."
