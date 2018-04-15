@@ -299,7 +299,7 @@ a :kernel parameter, that will be passed to
 
 ;; Python specific
 
-(defvar ob-jupyter-python-edit-prep-hook)
+(defvar ob-jupyter-python-edit-prep-hook nil)
 
 (provide 'ob-jupyter)
 ;;; ob-jupyter.el ends here
