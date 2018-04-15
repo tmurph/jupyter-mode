@@ -154,13 +154,13 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
 
 (defun ob-jupyter--babel-extract-fn (params)
   "Return the appropriate function to compute results according to Babel PARAMS."
-  (let* ((result-type (cdr (assq :result-type params)))
-         (result-params (cdr (assq :result-params params)))
-         (rownames (cdr (assq :rownames params)))
-         (colnames (cdr (assq :colnames params)))
-         (file (cdr (assq :file params)))
-         (output-dir (cdr (assq :output-dir params)))
-         (file-ext (cdr (assq :file-ext params))))
+  (let* ((result-type (alist-get :result-type params))
+         (result-params (alist-get :result-params params))
+         (rownames (alist-get :rownames params))
+         (colnames (alist-get :colnames params))
+         (file (alist-get :file params))
+         (output-dir (alist-get :output-dir params))
+         (file-ext (alist-get :file-ext params)))
     (cond
      ((eq result-type 'output)
       #'ob-jupyter--babel-output)
@@ -189,7 +189,7 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
 
 BABEL-INFO is as returned by `org-babel-get-src-block-info'."
   (let* ((params (nth 2 babel-info))
-         (session (cdr (assq :session params)))
+         (session (alist-get :session params))
          (kernel (cdr (assoc session jupyter--session-kernels-alist)))
          (lang (cdr (assoc session jupyter--session-langs-alist))))
     (if (not kernel)
@@ -217,7 +217,7 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
 
 PARAMS must include a :session parameter associated with an
 active kernel, to determine the underlying expansion language."
-  (let* ((session (cdr (assq :session params)))
+  (let* ((session (alist-get :session params))
          (lang (cdr (assoc session jupyter--session-langs-alist)))
          (var-fn (intern (format "org-babel-variable-assignments:%s" lang)))
          (var-fn (if (fboundp var-fn) var-fn #'ignore)))
@@ -232,7 +232,7 @@ PARAMS must include a :session parameter associated with an
 active kernel, to determine the underlying expansion language.
 
 If provided, include VAR-LINES before BODY."
-  (let* ((session (cdr (assq :session params)))
+  (let* ((session (alist-get :session params))
          (lang (cdr (assoc session jupyter--session-langs-alist)))
          (expand-fn (intern (format "org-babel-expand-body:%s" lang)))
          (expand-fn (if (fboundp expand-fn)
@@ -246,9 +246,9 @@ If provided, include VAR-LINES before BODY."
   "Execute the BODY of an Org Babel Jupyter src block.
 
 PARAMS are the Org Babel parameters associated with the block."
-  (let* ((session (cdr (assq :session params)))
+  (let* ((session (alist-get :session params))
          (kernel (cdr (assoc session jupyter--session-kernels-alist)))
-         (result-params (cdr (assq :result-params params)))
+         (result-params (alist-get :result-params params))
          (extract-fn (ob-jupyter--babel-extract-fn params))
          (redisplay (and (member "file" result-params)
                          ob-jupyter-redisplay-images))
@@ -293,11 +293,11 @@ a :kernel parameter, that will be passed to
 `jupyter--initialize-kernel'."
   (let* ((session-cons (assoc session jupyter--session-kernels-alist))
          (kernel (cdr session-cons))
-         (kernel-param (cdr (assq :kernel params)))
-         (conn-filename (cdr (assq :existing params)))
-         (ssh-server (cdr (assq :ssh params)))
-         (cmd-args (cdr (assq :cmd-args params)))
-         (kernel-args (cdr (assq :kernel-args params))))
+         (kernel-param (alist-get :kernel params))
+         (conn-filename (alist-get :existing params))
+         (ssh-server (alist-get :ssh params))
+         (cmd-args (alist-get :cmd-args params))
+         (kernel-args (alist-get :kernel-args params)))
     (unless kernel
       (setq session-cons (jupyter--acquire-session
                           session kernel-param conn-filename ssh-server

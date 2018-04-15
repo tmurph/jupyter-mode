@@ -752,7 +752,7 @@ For additional details, see http://jupyter-client.readthedocs.io/en/latest/messa
       (funcall (symbol-function (intern (format
                                          "jupyter--validate-%s-alist"
                                          key)))
-               (cdr (assq key alist))))))
+               (alist-get key alist)))))
 
 (defun jupyter--signed-message-from-parts (key id-parts msg-parts)
   "Create a signed Jupyter protocol message from KEY, ID-PARTS, and MSG-PARTS.
@@ -790,7 +790,7 @@ message before returning."
   (let ((keys '(header parent_header metadata content))
         ret)
     (dolist (key keys (nreverse ret))
-      (push (json-encode-alist (cdr (assq key alist))) ret))))
+      (push (json-encode-alist (alist-get key alist)) ret))))
 
 (defun jupyter--msg-type-from-alist (alist)
   "Extract the \"msg_type\" value from Jupyter protocol ALIST."
