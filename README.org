@@ -251,6 +251,9 @@ If your code block will produce a graph, specify =:results file= in the header. 
   - eventually, come back and implement their proposed solutions
   - some sort of proxy?  where I have one proxy sub that lives forever, and a proxy pub that handles ephemeral connections?
 - [ ] maybe support fontification and eldoc in org source blocks?
+  - eldoc of the code from the org file is maybe doable
+    - [ ] remove the “user error” from naked jupyter-mode
+    - [ ] set up a suitable eldoc-documentation-function
 - [-] update documentation, see https://www.divio.com/en/blog/documentation/
   - [X] need a tutorial
     - learning-oriented
@@ -264,7 +267,16 @@ If your code block will produce a graph, specify =:results file= in the header. 
     - is understanding-oriented
     - explains
     - provides background and context
-  - [X] reference
+  - [ ] reference
     - information-oriented
     - describes the machinery
     - is accurate and complete
+- [ ] support remote kernels
+  - a nifty tidbit … at the command line, an early =-f file= is overridden by a later =--existing file=
+  - therefore, to get ~jupyter--acquire-session~ to do the right thing, just need to pass in the appropriate =--existing file --ssh server=
+  - pretty easy to get these into ~org-babel-jupyter-initiate-session~, just need to look for them in the babel params
+  - in ~jupyter-connect~ we should probably just ask for them after asking for the kernelspec
+  - fuck this is harder than I hoped.  we gotta tweak all kinds of arguments, and when we finalize the session we gotta not delete the conn file.
+  - like, this sounds like a job for factories and classes and such.  but fuck.  that.  noise.
+  - maybe just have a “ssh true” flag in the kernel object?
+  - okay, so I think all my code looks right.  for some weird reason, though, when I go to initialize the kernel it’s not creating the ssh connection file that I need to set up local ports?  uh, what?  like I can literally follow the code, pause right after it starts the inferior process, read the message at the top “use --existing blah-ssh.json” but I can’t find any blah-ssh.json file anywhere in my filesystem.  wtf.
