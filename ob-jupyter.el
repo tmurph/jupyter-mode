@@ -173,7 +173,10 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
      (t
       (lambda (alist)
         (let ((value (ob-jupyter--babel-value alist)))
-          (and value (org-babel-script-escape value))))))))
+          (and value
+               (org-babel-result-cond result-params
+                 value
+                 (org-babel-script-escape value)))))))))
 
 (defvar org-babel-default-header-args:jupyter
   '((:colnames . "yes")
