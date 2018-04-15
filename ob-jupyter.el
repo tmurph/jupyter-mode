@@ -290,10 +290,15 @@ a :kernel parameter, that will be passed to
 `jupyter--initialize-kernel'."
   (let* ((session-cons (assoc session jupyter--session-kernels-alist))
          (kernel (cdr session-cons))
-         (kernel-param (cdr (assq :kernel params))))
+         (kernel-param (cdr (assq :kernel params)))
+         (conn-filename (cdr (assq :existing params)))
+         (ssh-server (cdr (assq :ssh params)))
+         (cmd-args (cdr (assq :cmd-args params)))
+         (kernel-args (cdr (assq :kernel-args params))))
     (unless kernel
       (setq session-cons (jupyter--acquire-session
-                          session kernel-param)
+                          session kernel-param conn-filename ssh-server
+                          cmd-args kernel-args)
             kernel (cdr session-cons)))
     (jupyter-struct-buffer kernel)))
 

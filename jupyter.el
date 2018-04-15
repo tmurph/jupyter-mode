@@ -436,6 +436,8 @@ Returns a list of the various parts."
 
 `jupyter-struct-conn-file-name'
 
+`jupyter-struct-ssh-server' The server name connected via ssh, or nil.
+
 `jupyter-struct-iopub-url' The endpoint to dynamically connect
   ZMQ socket objects to the Jupyter IOPub port.
 
@@ -450,6 +452,7 @@ to the Jupyter server."
   (process nil :read-only t)
   (buffer nil :read-only t)
   (conn-file-name nil :read-only t)
+  (ssh-server nil :read-only t)
   (iopub-url nil :read-only t)
   (shell nil :read-only t)
   (context nil :read-only t)
@@ -478,32 +481,48 @@ than having to implement that ourselves."
   (zmq--close iopub-socket))
 
 (defun jupyter--initialize-kernel
-    (kernelspec name &optional cmd-args kernel-args)
+    (kernelspec name
+                &optional conn-filename ssh-server cmd-args kernel-args)
   "Start a Jupyter KERNELSPEC and associate a comint repl.
 
 If KERNELSPEC is nil, just use the Jupyter default (python).
 
-The process name, comint buffer name, and Jupyter connection file
-name will all derive from NAME.
+The process name and comint buffer name will derive from NAME.
+
+If no CONN-FILENAME is provided, a Jupyter connection file name
+will be derived from NAME instead.
+
+If SSH-SERVER is provided, tunnel communications over ssh.
 
 If provided, the CMD-ARGS and KERNEL-ARGS (which must be lists) will
 be passed to `jupyter-command' like so:
 
 $ `jupyter-command' `jupyter-command-args'
-  -f derived-connection-file
+  [ --existing CONN-FILENAME | -f derived-connection-file ]
+  [ --ssh SSH-SERVER ]
   CMD-ARGS --kernel KERNEL KERNEL-ARGS
 
 Returns an `jupyter-struct'."
   (let* ((proc-name (format "*jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
-         (conn-file (format "emacs-%s.json" name))
-         (full-file (expand-file-name conn-file jupyter-runtime-dir))
-         (full-args (-flatten
+         conn-file conn-file-args full-file full-args
+         proc-buf json ctx iopub-url shell)
+    (if conn-filename
+        (setq conn-file conn-filename
+              conn-file-args (list "--existing" conn-filename))
+      (setq conn-file (format "emacs-%s.json" name)
+            conn-file-args (list "-f" conn-file)))
+    (setq full-file (expand-file-name conn-file jupyter-runtime-dir))
+    (when ssh-server
+      (setq full-file (progn (string-match "\\.json\\'" full-file)
+                             (replace-match "-ssh.json" nil nil full-file))))
+    (setq full-args (-flatten
                      (list jupyter-command-args
-                           "-f" conn-file cmd-args
+                           conn-file-args
+                           (and ssh-server (list "--ssh" ssh-server))
+                           cmd-args
                            (and kernelspec (list "--kernel" kernelspec))
                            kernel-args)))
-         proc-buf json ctx iopub-url shell)
     ;; this creates the conn-file in `jupyter-runtime-dir'
     (setq proc-buf (apply #'make-comint-in-buffer proc-name
                           proc-buffer-name jupyter-command
@@ -527,6 +546,7 @@ Returns an `jupyter-struct'."
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
                             :conn-file-name full-file
+                            :ssh-server ssh-server
                             :iopub-url iopub-url
                             :shell shell
                             :context ctx
@@ -551,7 +571,11 @@ response."
   (kill-buffer (jupyter-struct-buffer kernel))
   (zmq--close (jupyter-struct-shell kernel))
   (zmq--ctx-destroy (jupyter-struct-context kernel))
-  (delete-file (jupyter-struct-conn-file-name kernel)))
+  (let ((name (jupyter-struct-conn-file-name kernel)))
+    (when (and (jupyter-struct-ssh-server kernel)
+               (string-match "\\.json\\'" name))
+      (setq name (replace-match "-ssh.json" nil nil name)))
+    (delete-file name)))
 
 (defun jupyter--initialize-session (kernel session)
   "Ask KERNEL for info to set up Emacs objects for SESSION."
@@ -570,20 +594,22 @@ response."
         (push (cons session lang) jupyter--session-langs-alist)))))
 
 (defun jupyter--acquire-session
-    (session &optional kernelspec cmd-args kernel-args)
+    (session
+     &optional kernelspec conn-filename ssh-server cmd-args kernel-args)
   "Return the internal pair (SESSION . kernel-struct).
 
 If no such pair exists yet, create one with
 `jupyter--initialize-kernel' and update
 `jupyter--session-kernels-alist'.
 
-If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
-`jupyter--initialize-kernel'."
+If KERNELSPEC, CONN-FILENAME, SSH-SERVER, CMD-ARGS, KERNEL-ARGS
+are provided, pass them to `jupyter--initialize-kernel'."
   (let ((session-cons (assoc session jupyter--session-kernels-alist))
         kernel)
     (unless session-cons
-      (setq kernel (jupyter--initialize-kernel kernelspec session
-                                               cmd-args kernel-args)
+      (setq kernel (jupyter--initialize-kernel
+                    kernelspec session conn-filename ssh-server
+                    cmd-args kernel-args)
             session-cons (cons session kernel))
       (push session-cons jupyter--session-kernels-alist)
       (jupyter--wait-for-ready kernel)
