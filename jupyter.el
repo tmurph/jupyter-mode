@@ -1323,6 +1323,21 @@ If that happens, call this function to try again."
 
 ;; Compatibility
 
+;; `desktop-mode' tries to restore minor modes by default.  But
+;; `jupyter-mode' is more of a hack, not always like Emacs minor modes.
+;; In particular, it should never start up without manual user
+;; intervention.  We can tell desktop to leave well enough alone with
+;; `desktop-minor-mode-handlers'.
+(defvar desktop-buffer-name)
+(defun jupyter--desktop-handler ()
+  (message (concat
+            (format "`jupyter-mode' not restored in buffer %s."
+                    desktop-buffer-name)
+            "\n\n"
+            "Use `jupyter-connect' to connect to a kernel session.")))
+(add-to-list 'desktop-minor-mode-handlers
+             '(jupyter-mode jupyter--desktop-handler))
+
 ;; Python specific
 
 (defvar-local jupyter--original-python-shell-buffer-name nil)
