@@ -1321,6 +1321,8 @@ If that happens, call this function to try again."
       (setq jupyter--current-kernel nil)
       (run-hooks hook-var))))
 
+;; Compatibility
+
 ;; Python specific
 
 (defvar-local jupyter--original-python-shell-buffer-name nil)
