@@ -603,9 +603,9 @@ If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
 
 (defun jupyter--setup-inferior (interp inf-buffer)
   "Set up the appropriate major mode in INF-BUFFER according to INTERP."
-  (cond
-   ((string= interp "ipython")
-    (jupyter--setup-inferior-ipython inf-buffer))))
+  (funcall (symbol-function
+            (intern (format "jupyter--setup-inferior-%s" interp)))
+           inf-buffer))
 
 ;; IPython specific
 
