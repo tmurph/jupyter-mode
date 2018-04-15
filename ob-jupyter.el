@@ -292,7 +292,7 @@ a :kernel parameter, that will be passed to
          (kernel (cdr session-cons))
          (kernel-param (cdr (assq :kernel params))))
     (unless kernel
-      (setq session-cons (jupyter--initialize-session
+      (setq session-cons (jupyter--acquire-session
                           session kernel-param)
             kernel (cdr session-cons)))
     (jupyter-struct-buffer kernel)))

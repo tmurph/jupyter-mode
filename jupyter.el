@@ -569,7 +569,7 @@ response."
       (lambda (lang)
         (push (cons session lang) jupyter--session-langs-alist)))))
 
-(defun jupyter--initialize-session
+(defun jupyter--acquire-session
     (session &optional kernelspec cmd-args kernel-args)
   "Return the internal pair (SESSION . kernel-struct).
 
@@ -1270,7 +1270,7 @@ If no kernel is currently associated with SESSION, initialize one."
                         "Start new kernel: " (jupyter--list-kernelspecs)
                         nil t)
             kernelspec (if (string= kernelspec "") nil kernelspec)
-            kernel-cons (jupyter--initialize-session session kernelspec)
+            kernel-cons (jupyter--acquire-session session kernelspec)
             kernel (cdr kernel-cons))
       (display-buffer (jupyter-struct-buffer kernel)))
     (setq-local jupyter--current-kernel kernel)
