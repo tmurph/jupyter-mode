@@ -553,7 +553,7 @@ response."
   (zmq--ctx-destroy (jupyter-struct-context kernel))
   (delete-file (jupyter-struct-conn-file-name kernel)))
 
-(defun jupyter--initialize-session-1 (kernel session)
+(defun jupyter--initialize-session (kernel session)
   "Ask KERNEL for info to set up Emacs objects for SESSION."
   (deferred:$
     (jupyter--kernel-info-deferred kernel)
@@ -587,7 +587,7 @@ If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
             session-cons (cons session kernel))
       (push session-cons jupyter--session-kernels-alist)
       (jupyter--wait-for-ready kernel)
-      (jupyter--initialize-session-1 kernel session))
+      (jupyter--initialize-session kernel session))
     session-cons))
 
 (defun jupyter--finalize-session (session)
@@ -1288,7 +1288,7 @@ If that happens, call this function to try again."
                  "Session: " jupyter--session-kernels-alist nil t)))
   (let* ((kernel-cons (assoc session jupyter--session-kernels-alist))
          (kernel (cdr kernel-cons)))
-    (jupyter--initialize-session-1 kernel session)))
+    (jupyter--initialize-session kernel session)))
 
 (defun jupyter-finalize-session (session)
   "Finalize the kernel associated with SESSION."
