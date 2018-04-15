@@ -1323,17 +1323,22 @@ If that happens, call this function to try again."
 
 ;; Python specific
 
+(defvar-local jupyter--original-python-shell-buffer-name nil)
 (defvar python-shell-buffer-name)
 (declare-function org-babel-python-without-earmuffs "ob-python" (session))
 
-(defvar jupyter-python-mode-hook)
-
 (defun jupyter--python-shell-buffer-name ()
-  "Set `python-shell-buffer-name' to the current kernel buffer."
-  (set (make-local-variable 'python-shell-buffer-name)
-       (org-babel-python-without-earmuffs
-        (buffer-name
-         (jupyter-struct-buffer jupyter--current-kernel)))))
+  "Toggle `python-shell-buffer-name' in the current kernel buffer."
+  (if jupyter-mode
+      (progn
+        (setq-local jupyter--original-python-shell-buffer-name
+                    python-shell-buffer-name)
+        (setq-local python-shell-buffer-name
+                    (org-babel-python-without-earmuffs
+                     (buffer-name
+                      (jupyter-struct-buffer jupyter--current-kernel)))))
+    (setq-local python-shell-buffer-name
+                jupyter--original-python-shell-buffer-name)))
 
 (add-hook 'jupyter-python-mode-hook #'jupyter--python-shell-buffer-name)
 
