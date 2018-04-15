@@ -607,7 +607,7 @@ If KERNELSPEC, CMD-ARGS, KERNEL-ARGS are provided, pass them to
    ((string= interp "ipython")
     (jupyter--setup-inferior-ipython inf-buffer))))
 
-;; Python specific
+;; IPython specific
 
 (defvar python-shell--interpreter)
 (defvar python-shell--interpreter-args)
