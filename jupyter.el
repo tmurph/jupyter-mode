@@ -1324,7 +1324,11 @@ If that happens, call this function to try again."
 ;; Python specific
 
 (defvar-local jupyter--original-python-shell-buffer-name nil)
+(defvar-local jupyter--original-python-shell-interpreter nil)
+(defvar-local jupyter--original-python-shell-interpreter-args nil)
 (defvar python-shell-buffer-name)
+(defvar python-shell-interpreter)
+(defvar python-shell-interpreter-args)
 (declare-function org-babel-python-without-earmuffs "ob-python" (session))
 
 (defun jupyter--python-shell-buffer-name ()
@@ -1340,7 +1344,36 @@ If that happens, call this function to try again."
     (setq-local python-shell-buffer-name
                 jupyter--original-python-shell-buffer-name)))
 
+(defun jupyter--python-shell-interpreter ()
+  "Toggle `python-shell-interpreter' in the current kernel buffer."
+  (if jupyter-mode
+      (progn
+        (setq-local jupyter--original-python-shell-interpreter
+                    python-shell-interpreter)
+        (setq-local python-shell-interpreter
+                    jupyter-command))
+    (setq-local python-shell-interpreter
+                jupyter--original-python-shell-interpreter)))
+
+(defun jupyter--python-shell-interpreter-args ()
+  "Toggle `python-shell-interpreter-args' in the current kernel buffer."
+  (if jupyter-mode
+      (progn
+        (setq-local jupyter--original-python-shell-interpreter-args
+                    python-shell-interpreter-args)
+        (setq-local python-shell-interpreter-args
+                    (format "%s"
+                            (-flatten
+                             (list
+                              jupyter-command-args
+                              "--existing" (jupyter-struct-conn-file-name
+                                            jupyter--current-kernel))))))
+    (setq-local python-shell-interpreter-args
+                jupyter--original-python-shell-interpreter-args)))
+
 (add-hook 'jupyter-python-mode-hook #'jupyter--python-shell-buffer-name)
+(add-hook 'jupyter-python-mode-hook #'jupyter--python-shell-interpreter)
+(add-hook 'jupyter-python-mode-hook #'jupyter--python-shell-interpreter-args)
 
 (provide 'jupyter)
 ;;; jupyter.el ends here
