@@ -128,7 +128,8 @@ IGNORED is not used."
                      :async
                      (apply-partially #'jupyter--company-candidates-async
                                       kernel pos code))))
-      (sorted t)
+      (sorted nil)
+      (duplicates t)
       (doc-buffer (jupyter--company-doc-buffer-sync
                    kernel (length arg) arg)))))
 
