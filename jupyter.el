@@ -467,14 +467,15 @@ subscriber sockets when sending multiple requests to the kernel
 at once.  This allows us to use ZMQ to multiplex replies, rather
 than having to implement that ourselves."
   (let* ((ctx (jupyter-struct-context kernel))
-         (iopub (zmq--socket ctx ZMQ-SUB)))
-    (with-ffi-strings ((i (jupyter-struct-iopub-url kernel))
+         (iopub-socket (zmq--socket ctx ZMQ-SUB))
+         (iopub-url (jupyter-struct-iopub-url kernel)))
+    (with-ffi-strings ((i iopub-url)
                        (z ""))
-      (zmq--connect iopub i)
-      (zmq--setsockopt iopub ZMQ-SUBSCRIBE z 0)
+      (zmq--connect iopub-socket i)
+      (zmq--setsockopt iopub-socket ZMQ-SUBSCRIBE z 0)
       ;; give the subscribe time to propagate
       (sleep-for 0 100))
-    iopub))
+    iopub-socket))
 
 (defun jupyter--finalize-iopub (iopub-socket)
   "Close IOPUB-SOCKET."
