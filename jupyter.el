@@ -441,6 +441,14 @@ Returns a list of the various parts."
 `jupyter-struct-iopub-url' The endpoint to dynamically connect
   ZMQ socket objects to the Jupyter IOPub port.
 
+`jupyter-struct-iopub-wait-msec' The time to give subscription
+messages to propagate down dynamically connected ZMQ sockets.  As
+an aside, this is the dumbest thing.  ZMQ absolutely refuses to
+push messages to new SUB sockets and offers absolutely no
+mechanism to check when a SUB socket is ready to receive
+messages.  Maybe it's just a design flaw in Jupyter to use SUB
+sockets but uggggggh.
+
 `jupyter-struct-shell' A ZMQ socket object connected to the
 Jupyter Shell port.
 
@@ -454,6 +462,7 @@ to the Jupyter server."
   (conn-file-name nil :read-only t)
   (ssh-server nil :read-only t)
   (iopub-url nil :read-only t)
+  (iopub-wait-msec nil :read-only t)
   (shell nil :read-only t)
   (context nil :read-only t)
   (key nil :read-only t))
@@ -468,13 +477,14 @@ at once.  This allows us to use ZMQ to multiplex replies, rather
 than having to implement that ourselves."
   (let* ((ctx (jupyter-struct-context kernel))
          (iopub-socket (zmq--socket ctx ZMQ-SUB))
-         (iopub-url (jupyter-struct-iopub-url kernel)))
+         (iopub-url (jupyter-struct-iopub-url kernel))
+         (iopub-wait (jupyter-struct-iopub-wait-msec kernel)))
     (with-ffi-strings ((i iopub-url)
                        (z ""))
       (zmq--connect iopub-socket i)
       (zmq--setsockopt iopub-socket ZMQ-SUBSCRIBE z 0)
       ;; give the subscribe time to propagate
-      (sleep-for 0 100))
+      (sleep-for 0 iopub-wait))
     iopub-socket))
 
 (defun jupyter--finalize-iopub (iopub-socket)
@@ -507,16 +517,18 @@ Returns a `jupyter-struct'."
   (let* ((proc-name (format "*jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
          conn-file conn-file-args full-file full-args
-         proc-buf json ctx iopub-url shell)
+         proc-buf json ctx iopub-url iopub-wait-msec shell)
     (if conn-filename
         (setq conn-file conn-filename
               conn-file-args (list "--existing" conn-filename))
       (setq conn-file (format "emacs-%s.json" name)
             conn-file-args (list "-f" conn-file)))
     (setq full-file (expand-file-name conn-file jupyter-runtime-dir))
-    (when ssh-server
-      (setq full-file (progn (string-match "\\.json\\'" full-file)
-                             (replace-match "-ssh.json" nil nil full-file))))
+    (if ssh-server
+        (setq full-file (progn (string-match "\\.json\\'" full-file)
+                               (replace-match "-ssh.json" nil nil full-file))
+              iopub-wait-msec 300)
+      (setq iopub-wait-msec 100))
     (setq full-args (-flatten
                      (list jupyter-command-args
                            conn-file-args
@@ -549,6 +561,7 @@ Returns a `jupyter-struct'."
                             :conn-file-name full-file
                             :ssh-server ssh-server
                             :iopub-url iopub-url
+                            :iopub-wait-msec iopub-wait-msec
                             :shell shell
                             :context ctx
                             :key (alist-get 'key json))))
