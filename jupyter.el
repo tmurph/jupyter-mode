@@ -500,9 +500,9 @@ be passed to `jupyter-command' like so:
 $ `jupyter-command' `jupyter-command-args'
   [ --existing CONN-FILENAME | -f derived-connection-file ]
   [ --ssh SSH-SERVER ]
-  CMD-ARGS --kernel KERNEL KERNEL-ARGS
+  CMD-ARGS --kernel KERNELSPEC KERNEL-ARGS
 
-Returns an `jupyter-struct'."
+Returns a `jupyter-struct'."
   (let* ((proc-name (format "*jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
          conn-file conn-file-args full-file full-args
