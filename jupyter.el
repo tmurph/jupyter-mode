@@ -571,11 +571,7 @@ response."
   (kill-buffer (jupyter-struct-buffer kernel))
   (zmq--close (jupyter-struct-shell kernel))
   (zmq--ctx-destroy (jupyter-struct-context kernel))
-  (let ((name (jupyter-struct-conn-file-name kernel)))
-    (when (and (jupyter-struct-ssh-server kernel)
-               (string-match "\\.json\\'" name))
-      (setq name (replace-match "-ssh.json" nil nil name)))
-    (delete-file name)))
+  (delete-file (jupyter-struct-conn-file-name kernel)))
 
 (defun jupyter--initialize-session (kernel session)
   "Ask KERNEL for info to set up Emacs objects for SESSION."
