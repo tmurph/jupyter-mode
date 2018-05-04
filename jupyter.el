@@ -124,7 +124,7 @@ A shorter wait time increases Emacs CPU load."
   :type 'integer
   :group 'jupyter)
 
-(defcustom jupyter-timeout-msec 1000
+(defcustom jupyter-default-timeout-msec 1000
   "The wait time (in msec) before timing out polls to Jupyter sockets.
 
 WARNING: if you set this to nil, polls never time out.  If for
@@ -681,8 +681,8 @@ Returns a deferred object that can be chained with `deferred:$'."
     (deferred:lambda (elapsed)
       (cond
        ((zmq--check-for-receive socket) t)
-       ((and elapsed (or timeout jupyter-timeout-msec)
-             (> elapsed (or timeout jupyter-timeout-msec)))
+       ((and elapsed (or timeout jupyter-default-timeout-msec)
+             (> elapsed (or timeout jupyter-default-timeout-msec)))
         (error "Socket poll timed out"))
        (t (deferred:next self (+ (or elapsed 0) jupyter-poll-msec)))))))
 
