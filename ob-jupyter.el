@@ -178,6 +178,18 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
                  value
                  (org-babel-script-escape value)))))))))
 
+(defun ob-jupyter--acquire-session (session params)
+  "Wrap `jupyter--acquire-session' for use from `ob-jupyter' functions.
+
+Extract appropriate values from PARAMS and pass them along with SESSION."
+  (let* ((kernel-param (alist-get :kernel params))
+         (conn-filename (alist-get :existing params))
+         (ssh-server (alist-get :ssh params))
+         (cmd-args (alist-get :cmd-args params))
+         (kernel-args (alist-get :kernel-args params)))
+    (jupyter--acquire-session session kernel-param conn-filename
+                              ssh-server cmd-args kernel-args)))
+
 (defvar org-babel-default-header-args:jupyter
   '((:colnames . "yes")
     (:rownames . "no")
