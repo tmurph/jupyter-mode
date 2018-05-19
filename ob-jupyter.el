@@ -248,6 +248,7 @@ If provided, include VAR-LINES before BODY."
 PARAMS are the Org Babel parameters associated with the block."
   (let* ((session (alist-get :session params))
          (kernel (cdr (assoc session jupyter--session-kernels-alist)))
+         (deferred-timeout (alist-get :timeout params))
          (result-params (alist-get :result-params params))
          (extract-fn (ob-jupyter--babel-extract-fn params))
          (redisplay (and (member "file" result-params)
@@ -261,7 +262,7 @@ PARAMS are the Org Babel parameters associated with the block."
       (setq var-lines (org-babel-variable-assignments:jupyter params)
             code (org-babel-expand-body:jupyter body params var-lines))
       (deferred:$
-        (jupyter--execute-deferred kernel code)
+        (jupyter--execute-deferred kernel code deferred-timeout)
         (deferred:nextc it #'jupyter--raise-error-maybe)
         (deferred:nextc it extract-fn)
         (deferred:set-next it
