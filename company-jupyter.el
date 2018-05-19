@@ -68,9 +68,9 @@ to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
                           prefix-re
                           (length jupyter--company-prefix-cache)))
          (prefix (and (consp symbol-or-cons) (car symbol-or-cons)))
-         (trivial-prefix (and prefix (string= prefix "")))
+         (trivial-cache (string= jupyter--company-prefix-cache ""))
          result)
-    (if (and prefix (not trivial-prefix))
+    (if (and prefix (not trivial-cache))
         (setq result (concat jupyter--company-prefix-cache prefix))
       (setq result (jupyter--company-prefix-sync kernel pos code)
             jupyter--company-prefix-cache
