@@ -436,6 +436,9 @@ Returns a list of the various parts."
 
 `jupyter-struct-conn-file-name'
 
+`jupyter-struct-conn-file-existed-p' Whether this kernel's
+connection file existed before starting the process.
+
 `jupyter-struct-ssh-server' The server name connected via ssh, or nil.
 
 `jupyter-struct-iopub-url' The endpoint to dynamically connect
@@ -460,6 +463,7 @@ to the Jupyter server."
   (process nil :read-only t)
   (buffer nil :read-only t)
   (conn-file-name nil :read-only t)
+  (cf-existed-p nil :read-only t)
   (ssh-server nil :read-only t)
   (iopub-url nil :read-only t)
   (iopub-wait-msec nil :read-only t)
@@ -516,17 +520,20 @@ $ `jupyter-command' `jupyter-command-args'
 Returns a `jupyter-struct'."
   (let* ((proc-name (format "*jupyter-%s*" name))
          (proc-buffer-name (format "*Jupyter:%s*" name))
-         conn-file conn-file-args full-file full-args
+         conn-file conn-file-args cf-existed-p full-file full-args
          proc-buf json ctx iopub-url iopub-wait-msec shell)
     (if conn-filename
         (setq conn-file conn-filename
-              conn-file-args (list "--existing" conn-filename))
+              conn-file-args (list "--existing" conn-filename)
+              cf-existed-p t)
       (setq conn-file (format "emacs-%s.json" name)
-            conn-file-args (list "-f" conn-file)))
+            conn-file-args (list "-f" conn-file)
+            cf-existed-p nil))
     (setq full-file (expand-file-name conn-file jupyter-runtime-dir))
     (if ssh-server
         (setq full-file (progn (string-match "\\.json\\'" full-file)
                                (replace-match "-ssh.json" nil nil full-file))
+              cf-existed-p nil
               iopub-wait-msec 300)
       (setq iopub-wait-msec 100))
     (setq full-args (-flatten
@@ -559,6 +566,7 @@ Returns a `jupyter-struct'."
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
                             :conn-file-name full-file
+                            :cf-existed-p cf-existed-p
                             :ssh-server ssh-server
                             :iopub-url iopub-url
                             :iopub-wait-msec iopub-wait-msec
@@ -585,7 +593,8 @@ response."
   (kill-buffer (jupyter-struct-buffer kernel))
   (zmq--close (jupyter-struct-shell kernel))
   (zmq--ctx-destroy (jupyter-struct-context kernel))
-  (delete-file (jupyter-struct-conn-file-name kernel)))
+  (unless (jupyter-struct-cf-existed-p kernel)
+    (delete-file (jupyter-struct-conn-file-name kernel))))
 
 (defun jupyter--initialize-session (kernel session)
   "Ask KERNEL for info to set up Emacs objects for SESSION."
