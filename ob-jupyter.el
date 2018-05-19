@@ -259,7 +259,7 @@ If provided, include VAR-LINES before BODY."
 
 PARAMS are the Org Babel parameters associated with the block."
   (let* ((session (alist-get :session params))
-         (kernel (cdr (assoc session jupyter--session-kernels-alist)))
+         (kernel (cdr (ob-jupyter--acquire-session session params)))
          (deferred-timeout (alist-get :timeout params))
          (result-params (alist-get :result-params params))
          (extract-fn (ob-jupyter--babel-extract-fn params))
