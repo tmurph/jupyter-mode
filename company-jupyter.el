@@ -63,9 +63,7 @@
 First check the result of `company-grab-symbol-cons' against
 `jupyter--company-prefix-cache'.  If that check fails, fall back
 to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
-  (let* ((prefix-re (replace-regexp-in-string
-                     "\\." "\\." ; literal replace, lol
-                     jupyter--company-prefix-cache nil t))
+  (let* ((prefix-re (regexp-quote jupyter--company-prefix-cache))
          (symbol-or-cons (company-grab-symbol-cons
                           prefix-re
                           (length jupyter--company-prefix-cache)))
