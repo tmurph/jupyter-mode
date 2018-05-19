@@ -300,22 +300,14 @@ PARAMS are the Org Babel parameters associated with the block."
 (defun org-babel-jupyter-initiate-session (session params)
   "Return the comint buffer associated with SESSION.
 
-If no such buffer exists yet, create one with
-`jupyter--initialize-kernel'.  If Babel PARAMS includes
-a :kernel parameter, that will be passed to
-`jupyter--initialize-kernel'."
-  (let* ((session-cons (assoc session jupyter--session-kernels-alist))
-         (kernel (cdr session-cons))
-         (kernel-param (alist-get :kernel params))
-         (conn-filename (alist-get :existing params))
-         (ssh-server (alist-get :ssh params))
-         (cmd-args (alist-get :cmd-args params))
-         (kernel-args (alist-get :kernel-args params)))
-    (unless kernel
-      (setq session-cons (jupyter--acquire-session
-                          session kernel-param conn-filename ssh-server
-                          cmd-args kernel-args)
-            kernel (cdr session-cons)))
+If no such buffer exists yet, one will be created via
+`jupyter--initialize-kernel'.  If the PARAMS plist includes any
+of the following keys, they will be passed to
+`jupyter--initialize-kernel':
+
+ :kernel :existing :ssh :cmd-args :kernel-args"
+  (let* ((session-cons (ob-jupyter--acquire-session session params))
+         (kernel (cdr session-cons)))
     (jupyter-struct-buffer kernel)))
 
 ;; Python specific
