@@ -73,6 +73,10 @@ Elements of ALIST that are not conses are ignore."
         (setq tail tail-cdr))))
   alist)
 
+(defsubst jupyter--null-from-empty-string (s)
+  "If S is the empty string, return nil, else S."
+  (if (string= s "") nil s))
+
 ;; Constants
 
 (defconst jupyter--delim "<IDS|MSG>"
@@ -1298,6 +1302,54 @@ Pretty prints the results to *jupyter-debug* buffer."
           (cdar (json-read-from-string
                  (shell-command-to-string
                   "jupyter-kernelspec list --json")))))
+
+;;;###autoload
+(defun jupyter-initialize-session
+    (session
+     &optional kernelspec conn-filename ssh-server cmd-args kernel-args)
+  "Initialize a new Jupyter SESSION.
+
+Returns the internal pair (SESSION . kernel-struct).
+
+If SESSION has already been initialized, return the pair but do
+not start a new session.
+
+If no session pair exists yet, create one with
+`jupyter--initialize-kernel' and update
+`jupyter--session-kernels-alist'.
+
+If KERNELSPEC, CONN-FILENAME, SSH-SERVER, CMD-ARGS, KERNEL-ARGS
+are provided, pass them to `jupyter--initialize-kernel'."
+  (interactive (list
+                (completing-read
+                 "Session: " jupyter--session-kernels-alist nil 'confirm)
+                nil nil nil nil nil))
+  (let ((kernel-cons (assoc session jupyter--session-kernels-alist)))
+    (unless kernel-cons
+      (setq kernelspec (or kernelspec
+                           (completing-read
+                            "Start new kernel: "
+                            (jupyter--list-kernelspecs)
+                            nil t))
+            conn-filename (or conn-filename
+                              (completing-read
+                               "Use an existing connection? "
+                               (directory-files jupyter-runtime-dir nil
+                                                "json\\'")
+                               nil t))
+            ssh-server (or ssh-server
+                           (read-from-minibuffer "Use SSH? "))
+            cmd-args (or cmd-args
+                         (read-from-minibuffer "Add Jupyter command args? "))
+            kernel-args (or kernel-args
+                            (read-from-minibuffer "Add kernel args? "))
+            kernel-cons (apply #'jupyter--acquire-session
+                               session
+                               (mapcar #'jupyter--null-from-empty-string
+                                       (list kernelspec conn-filename
+                                             ssh-server cmd-args
+                                             kernel-args)))))
+    kernel-cons))
 
 ;;;###autoload
 (defun jupyter-connect (session)
