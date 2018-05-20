@@ -1351,6 +1351,8 @@ are provided, pass them to `jupyter--initialize-kernel'."
                                              kernel-args)))))
     kernel-cons))
 
+(defalias 'jupyter-open-session 'jupyter-initialize-session)
+
 ;;;###autoload
 (defun jupyter-connect (session)
   "Connect the current buffer to the kernel associated with SESSION.
@@ -1365,12 +1367,16 @@ If no kernel is currently associated with SESSION, initialize one."
     (jupyter-mode +1)
     (display-buffer (jupyter-struct-buffer kernel))))
 
+(defalias 'jupyter-close-session 'jupyter-finalize-session)
+
 (defun jupyter-finalize-session (session)
   "Finalize the kernel associated with SESSION."
   (interactive (list
                 (completing-read
                  "Session: " jupyter--session-kernels-alist nil t)))
   (jupyter--finalize-session session))
+
+(defalias 'jupyter-close-all 'jupyter-finalize-all)
 
 (defun jupyter-finalize-all ()
   "Finalize all existing sessions."
