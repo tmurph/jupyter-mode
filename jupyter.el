@@ -1359,19 +1359,11 @@ If no kernel is currently associated with SESSION, initialize one."
   (interactive (list
                 (completing-read
                  "Session: " jupyter--session-kernels-alist nil 'confirm)))
-  (let* ((kernel-cons (assoc session jupyter--session-kernels-alist))
-         (kernel (cdr kernel-cons))
-         kernelspec)
-    (unless kernel
-      (setq kernelspec (completing-read
-                        "Start new kernel: " (jupyter--list-kernelspecs)
-                        nil t)
-            kernelspec (if (string= kernelspec "") nil kernelspec)
-            kernel-cons (jupyter--acquire-session session kernelspec)
-            kernel (cdr kernel-cons))
-      (display-buffer (jupyter-struct-buffer kernel)))
+  (let* ((kernel-cons (jupyter-initialize-session session))
+         (kernel (cdr kernel-cons)))
     (setq-local jupyter--current-kernel kernel)
-    (jupyter-mode +1)))
+    (jupyter-mode +1)
+    (display-buffer (jupyter-struct-buffer kernel))))
 
 (defun jupyter-finalize-session (session)
   "Finalize the kernel associated with SESSION."
