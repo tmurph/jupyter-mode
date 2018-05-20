@@ -1321,20 +1321,6 @@ If no kernel is currently associated with SESSION, initialize one."
     (setq-local jupyter--current-kernel kernel)
     (jupyter-mode +1)))
 
-(defun jupyter-fixup-session (session)
-  "Reinitialize SESSION buffer and alists.
-
-Sometimes `jupyter-connect' fails to properly set up the inferior
-kernel buffer, due to timeouts communicating with the kernel.
-
-If that happens, call this function to try again."
-  (interactive (list
-                (completing-read
-                 "Session: " jupyter--session-kernels-alist nil t)))
-  (let* ((kernel-cons (assoc session jupyter--session-kernels-alist))
-         (kernel (cdr kernel-cons)))
-    (jupyter--initialize-session kernel session)))
-
 (defun jupyter-finalize-session (session)
   "Finalize the kernel associated with SESSION."
   (interactive (list
