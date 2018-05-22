@@ -1322,7 +1322,8 @@ If KERNELSPEC, CONN-FILENAME, SSH-SERVER, CMD-ARGS, KERNEL-ARGS
 are provided, pass them to `jupyter--initialize-kernel'."
   (interactive (list
                 (completing-read
-                 "Session: " jupyter--session-kernels-alist nil 'confirm)
+                 "Session: " jupyter--session-kernels-alist nil 'confirm
+                 nil nil "default")
                 nil nil nil nil nil))
   (let ((kernel-cons (assoc session jupyter--session-kernels-alist)))
     (unless kernel-cons
