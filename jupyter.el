@@ -1349,6 +1349,7 @@ are provided, pass them to `jupyter--initialize-kernel'."
                                        (list kernelspec conn-filename
                                              ssh-server cmd-args
                                              kernel-args)))))
+    (display-buffer (jupyter-struct-buffer (cdr kernel-cons)))
     kernel-cons))
 
 (defalias 'jupyter-open-session 'jupyter-initialize-session)
