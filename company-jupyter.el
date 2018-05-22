@@ -41,7 +41,7 @@
 (require 'company)
 (require 'jupyter)
 
-(defun jupyter--company-prefix-sync (kernel pos code)
+(defun company-jupyter--prefix-sync (kernel pos code)
   "Query KERNEL for the completion prefix at POS in CODE."
   ;; this could easily return a deferred object for use with company async
   ;; however, company does not support async prefix commands
@@ -54,43 +54,43 @@
           (substring-no-properties
            code (car cursor-cons) (cdr cursor-cons)))))))
 
-(defvar jupyter--company-prefix-cache ""
-  "The most recent prefix returned by `jupyter--company-prefix-sync'.")
+(defvar company-jupyter--prefix-cache ""
+  "The most recent prefix returned by `company-jupyter--prefix-sync'.")
 
-(defun jupyter--company-prefix (kernel pos code)
+(defun company-jupyter--prefix (kernel pos code)
   "Return the prefix for company completion, or nil for no completion.
 
 First check the result of `company-grab-symbol-cons' against
-`jupyter--company-prefix-cache'.  If that check fails, fall back
-to `jupyter--company-prefix-sync' on KERNEL with POS and CODE."
-  (let* ((prefix-re (regexp-quote jupyter--company-prefix-cache))
+`company-jupyter--prefix-cache'.  If that check fails, fall back
+to `company-jupyter--prefix-sync' on KERNEL with POS and CODE."
+  (let* ((prefix-re (regexp-quote company-jupyter--prefix-cache))
          (symbol-or-cons (company-grab-symbol-cons
                           prefix-re
-                          (length jupyter--company-prefix-cache)))
+                          (length company-jupyter--prefix-cache)))
          (prefix (and (consp symbol-or-cons) (car symbol-or-cons)))
-         (trivial-cache (string= jupyter--company-prefix-cache ""))
+         (trivial-cache (string= company-jupyter--prefix-cache ""))
          result)
     (if (and prefix (not trivial-cache))
-        (setq result (concat jupyter--company-prefix-cache prefix))
-      (setq result (jupyter--company-prefix-sync kernel pos code)
-            jupyter--company-prefix-cache
+        (setq result (concat company-jupyter--prefix-cache prefix))
+      (setq result (company-jupyter--prefix-sync kernel pos code)
+            company-jupyter--prefix-cache
             (replace-regexp-in-string "[^.]*\\'" "" result)))
     result))
 
-(defun jupyter--company-candidates-async (kernel pos code callback)
+(defun company-jupyter--candidates-async (kernel pos code callback)
   "Query KERNEL for completion candidates at POS in CODE and pass the results to CALLBACK."
   (deferred:$
     (jupyter--complete-deferred kernel pos code 1000)
     (deferred:nextc it #'jupyter--matches)
     (deferred:nextc it callback)))
 
-(defun jupyter--company-candidates-sync (kernel pos code)
+(defun company-jupyter--candidates-sync (kernel pos code)
   "Query KERNEL for completion candidates at POS in CODE."
   (deferred:sync!
-    (jupyter--company-candidates-async
+    (company-jupyter--candidates-async
      kernel pos code #'identity)))
 
-(defun jupyter--company-doc-buffer-sync (kernel pos code)
+(defun company-jupyter--doc-buffer-sync (kernel pos code)
   "Query KERNEL for documentation at POS in CODE and return a doc buffer."
   ;; this could easily return a deferred object for use with company async
   ;; however, company does not support async doc buffer commands
@@ -119,16 +119,16 @@ IGNORED is not used."
                    (not (company-in-string-or-comment))
                    (or company--manual-action
                        (consp (company-grab-symbol-cons "\\.")))
-                   (jupyter--company-prefix kernel pos code)))
+                   (company-jupyter--prefix kernel pos code)))
       (candidates (if company--manual-action
-                      (jupyter--company-candidates-sync kernel pos code)
+                      (company-jupyter--candidates-sync kernel pos code)
                     (cons
                      :async
-                     (apply-partially #'jupyter--company-candidates-async
+                     (apply-partially #'company-jupyter--candidates-async
                                       kernel pos code))))
       (sorted nil)
       (duplicates t)
-      (doc-buffer (jupyter--company-doc-buffer-sync
+      (doc-buffer (company-jupyter--doc-buffer-sync
                    kernel (length arg) arg)))))
 
 (provide 'company-jupyter)
