@@ -1334,16 +1334,16 @@ are provided, pass them to `jupyter--initialize-kernel'."
                             nil t))
             conn-filename (or conn-filename
                               (completing-read
-                               "Use an existing connection? "
+                               "(Optional) Use an existing connection? "
                                (directory-files jupyter-runtime-dir nil
                                                 "json\\'")
                                nil t))
             ssh-server (or ssh-server
-                           (read-from-minibuffer "Use SSH? "))
+                           (read-from-minibuffer "(Optional) SSH to a server? "))
             cmd-args (or cmd-args
-                         (read-from-minibuffer "Add Jupyter command args? "))
+                         (read-from-minibuffer "(Optional) Add Jupyter command args? "))
             kernel-args (or kernel-args
-                            (read-from-minibuffer "Add kernel args? "))
+                            (read-from-minibuffer "(Optional) Add kernel args? "))
             kernel-cons (apply #'jupyter--acquire-session
                                session
                                (mapcar #'jupyter--null-from-empty-string
