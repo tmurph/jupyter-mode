@@ -1,4 +1,4 @@
-;;; test-jupyter --- Unit tests for the Jupyter library
+;;; test-ob-jupyter --- Unit tests for the Jupyter library
 
 ;;; Commentary:
 ;; Every library needs a test suite.
