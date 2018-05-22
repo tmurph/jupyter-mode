@@ -4,6 +4,8 @@ test:
 	cask emacs -batch -L ../emacs-ffi \
 	  -l jupyter.el \
 	  -l test-jupyter.el \
+	  -l ob-jupyter.el \
+	  -l test-ob-jupyter.el \
 	  -f ert-run-tests-batch-and-exit
 
 install:
