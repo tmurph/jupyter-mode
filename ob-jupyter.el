@@ -206,15 +206,18 @@ BABEL-INFO is as returned by `org-babel-get-src-block-info'."
          (lang (cdr (assoc session jupyter--session-langs-alist))))
     (if (not kernel)
         (message "No running kernel. Cannot set up src buffer.")
-      ;; Hack around the normal behavior of changing major mode.
+      ;; We're going to change the source buffer major mode from
+      ;; `fundamental-mode' to whatever the kernel language calls for.
 
-      ;; We have to do this b/c `org-edit-src-code' sets up important
-      ;; local variables after setting the major mode, which we miss
-      ;; when we reset the major mode *after* setting up the buffer.
+      ;; This violates an important Org assumption.  Specifically,
+      ;; `org-edit-src-code' sets up local variables that tell Org how
+      ;; to return edits back to the original buffer.  These local
+      ;; variables will get killed when we reset the major mode, so here
+      ;; we hack around that behavior.
 
-      ;; I suppose in a perfect world we could associate the appropriate
-      ;; language with a babel param, like Org Babel expects.  But I
-      ;; dunno how to do that with my current code.
+      ;; We could avoid this hack by storing the desired buffer major
+      ;; mode in a babel param like Org Babel expects.  However, I don't
+      ;; know how to do that with my current code.
       (cl-letf (((symbol-function 'kill-all-local-variables)
                  (lambda () (run-hooks 'change-major-mode-hook))))
         (funcall (org-src--get-lang-mode lang)))
