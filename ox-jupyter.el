@@ -65,7 +65,7 @@
 (defun ox-jupyter--json-encode-alist (alist)
   "JSON encode ALIST, and always pretty print."
   (let ((json-encoding-pretty-print t))
-    (json-encode-alist alist)))
+    (concat (json-encode-alist alist) ",")))
 
 (defun ox-jupyter--markdown-alist (&rest lines)
   "Return a Jupyter Notebook markdown alist comprising LINES of source."

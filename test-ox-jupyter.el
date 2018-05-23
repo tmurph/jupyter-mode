@@ -39,7 +39,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              "  \"source\": ["
              "    \"# Example\""
              "  ]"
-             "}")))
+             "},")))
   (should (equal (ox-jupyter--headline headline contents info)
                  expected-text)))
 
@@ -55,7 +55,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  \"source\": ["
      "    \"paragraph contents\""
      "  ]"
-     "}")))
+     "},")))
   (should (equal (ox-jupyter--paragraph paragraph contents info)
                  expected-text)))
 
@@ -73,7 +73,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  \"source\": ["
      "    \"some code\""
      "  ]"
-     "}"))
+     "},"))
    ('(src-block (:value "code\nthat spans\nmulti lines"))
     nil nil
     (ox-jupyter-concat-multiline
@@ -88,7 +88,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"that spans\","
      "    \"multi lines\""
      "  ]"
-     "}"))
+     "},"))
    ('(src-block (:value "  code\n  that comes\n  indented"))
     nil nil
     (ox-jupyter-concat-multiline
@@ -103,7 +103,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"that comes\","
      "    \"indented\""
      "  ]"
-     "}")))
+     "},")))
   (should (equal (ox-jupyter--src-block src-block contents info)
                  expected-text)))
 
