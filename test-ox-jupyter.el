@@ -59,5 +59,53 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ox-jupyter--paragraph paragraph contents info)
                  expected-text)))
 
+(ert-deftest-parametrize ox-jupyter-src-block
+  (src-block contents info expected-text)
+  (('(src-block (:language "jupyter" :value "some code\n"))
+    nil nil
+    (ox-jupyter-concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": [],"
+     "  \"source\": ["
+     "    \"some code\""
+     "  ]"
+     "}"))
+   ('(src-block (:value "code\nthat spans\nmulti lines"))
+    nil nil
+    (ox-jupyter-concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": [],"
+     "  \"source\": ["
+     "    \"code\","
+     "    \"that spans\","
+     "    \"multi lines\""
+     "  ]"
+     "}"))
+   ('(src-block (:value "  code\n  that comes\n  indented"))
+    nil nil
+    (ox-jupyter-concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": [],"
+     "  \"source\": ["
+     "    \"code\","
+     "    \"that comes\","
+     "    \"indented\""
+     "  ]"
+     "}")))
+  (should (equal (ox-jupyter--src-block src-block contents info)
+                 expected-text)))
+
 (provide 'test-ox-jupyter)
 ;;; test-ox-jupyter.el ends here

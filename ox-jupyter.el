@@ -73,6 +73,14 @@
     ("metadata" . ,(make-hash-table))
     ("source" . ,lines)))
 
+(defun ox-jupyter--code-alist (&rest lines)
+  "Return a Jupyter Notebook code alist comprising LINES of source."
+  `(("cell_type" . "code")
+    ("execution_count")
+    ("metadata" . ,(make-hash-table))
+    ("outputs" . ,(vector))
+    ("source" . ,lines)))
+
 ;;; Headline
 
 (defun ox-jupyter--headline (headline _contents _info)
@@ -105,12 +113,23 @@ holding contextual information."
 
 ;;; Src Block
 
-(defun ox-jupyter--src-block (src-block contents info)
+(defun ox-jupyter--src-block (src-block _contents _info)
   "Transcode a SRC-BLOCK element from Org to Jupyter notebook JSON.
 
 CONTENTS holds the contents of the src-block.  INFO is a plist
 holding contextual information."
-  (ignore src-block contents info))
+  (let* ((code-value (org-element-property :value src-block))
+         (preserve-indent-p
+          (org-element-property :preserve-indent src-block))
+         (code-value (if preserve-indent-p
+                         code-value
+                       (with-temp-buffer
+                         (insert code-value)
+                         (org-do-remove-indentation)
+                         (buffer-string))))
+         (code-text (split-string (string-trim-right code-value) "\n"))
+         (code-alist (apply #'ox-jupyter--code-alist code-text)))
+    (ox-jupyter--json-encode-alist code-alist)))
 
 ;;; End-user functions
 
