@@ -114,7 +114,7 @@ of cell-level transcoding."
     ("outputs" . ,(vector))
     ("source" . ,lines)))
 
-;;; Bold
+;;; Parsing Functions
 
 (defun ox-jupyter--bold (_bold contents _info)
   "Transcode BOLD text to strongly emphasized Jupyter notebook JSON.
@@ -123,16 +123,12 @@ CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "**%s**" contents))
 
-;;; Code
-
 (defun ox-jupyter--code (code _contents _info)
   "Transcode CODE text to backticked Jupyter notebook JSON.
 
 CONTENTS is nil for some reason.  INFO is a plist of contextual
 information."
   (format "`%s`" (org-element-property :value code)))
-
-;;; Headline
 
 (defun ox-jupyter--headline (headline contents _info)
   "Transcode a HEADLINE element from Org to Jupyter notebook JSON.
@@ -153,16 +149,12 @@ headline.  INFO is a plist holding contextual information."
         (concat encoded-string "\n" contents)
       encoded-string)))
 
-;;; Italic
-
 (defun ox-jupyter--italic (_italic contents _info)
   "Transcode ITALIC text to emphasized Jupyter notebook JSON.
 
 CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "_%s_" contents))
-
-;;; Paragraph
 
 (defun ox-jupyter--paragraph (_paragraph contents _info)
   "Transcode a PARAGRAPH element from Org to Jupyter notebook JSON.
@@ -174,16 +166,12 @@ paragraph.  INFO is a plist of contextual information."
                                 markdown-text)))
     (ox-jupyter--json-encode-alist markdown-alist)))
 
-;;; Section
-
 (defun ox-jupyter--section (_section contents _info)
   "Transcode a SECTION element from Org to Jupyter notebook JSON.
 
 CONTENTS is the concatenation of parsed subelements of the
 section.  INFO is a plist of contextual information."
   contents)
-
-;;; Src Block
 
 (defun ox-jupyter--src-block (src-block _contents _info)
   "Transcode a SRC-BLOCK element from Org to Jupyter notebook JSON.
@@ -203,8 +191,6 @@ contextual information."
          (code-alist (apply #'ox-jupyter--code-alist code-text)))
     (ox-jupyter--json-encode-alist code-alist)))
 
-;;; Strike-Through
-
 (defun ox-jupyter--strike-through (_strike-through contents _info)
   "Transcode STRIKE-THROUGH text to emphasized Jupyter notebook JSON.
 
@@ -212,16 +198,12 @@ CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "~~%s~~" contents))
 
-;;; Underline
-
 (defun ox-jupyter--underline (_underline contents _info)
   "Transcode UNDERLINE text to emphasized Jupyter notebook JSON.
 
 CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "_%s_" contents))
-
-;;; Verbatim
 
 (defun ox-jupyter--verbatim (verbatim _contents _info)
   "Transcode VERBATIM text to backticked Jupyter notebook JSON.
