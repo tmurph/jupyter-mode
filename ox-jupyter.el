@@ -47,6 +47,7 @@
 (org-export-define-backend 'jupyter
   '((headline . ox-jupyter--headline)
     (paragraph . ox-jupyter--paragraph)
+    (section . ox-jupyter--section)
     (src-block . ox-jupyter--src-block))
   :menu-entry
   '(?j "Export to Jupyter Notebook"
@@ -109,7 +110,7 @@ of cell-level transcoding."
 
 ;;; Headline
 
-(defun ox-jupyter--headline (headline _contents _info)
+(defun ox-jupyter--headline (headline contents _info)
   "Transcode a HEADLINE element from Org to Jupyter notebook JSON.
 
 CONTENTS is the concatenation of parsed subelements of the
@@ -122,8 +123,11 @@ headline.  INFO is a plist holding contextual information."
                           (insert ? )
                           (insert raw-value)
                           (buffer-string)))
-         (headline-alist (ox-jupyter--markdown-alist headline-text)))
-    (ox-jupyter--json-encode-alist headline-alist)))
+         (headline-alist (ox-jupyter--markdown-alist headline-text))
+         (encoded-string (ox-jupyter--json-encode-alist headline-alist)))
+    (if contents
+        (concat encoded-string "\n" contents)
+      encoded-string)))
 
 ;;; Paragraph
 
@@ -136,6 +140,15 @@ paragraph.  INFO is a plist of contextual information."
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
     (ox-jupyter--json-encode-alist markdown-alist)))
+
+;;; Section
+
+(defun ox-jupyter--section (_section contents _info)
+  "Transcode a SECTION element from Org to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the
+section.  INFO is a plist of contextual information."
+  contents)
 
 ;;; Src Block
 
