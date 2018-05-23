@@ -88,11 +88,8 @@ holding contextual information."
                           (insert ? )
                           (insert raw-value)
                           (buffer-string)))
-         (headline-alist `(("cell_type" . "markdown")
-                           ("metadata")
-                           ("source" ,headline-text)))
-         (json-encoding-pretty-print t))
-    (json-encode-alist headline-alist)))
+         (headline-alist (ox-jupyter--markdown-alist headline-text)))
+    (ox-jupyter--json-encode-alist headline-alist)))
 
 ;;; Paragraph
 
