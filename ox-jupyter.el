@@ -51,7 +51,11 @@
   :menu-entry
   '(?j "Export to Jupyter Notebook"
        ((?J "As JSON buffer" ox-jupyter-export-as-json)
-        (?j "As JSON file" ox-jupyter-export-to-json))))
+        (?j "As JSON file" ox-jupyter-export-to-json)))
+  :filters-alist '((:filter-body . ox-jupyter--no-comma-ending)
+                   (:filter-headline . ox-jupyter--normalize-string)
+                   (:filter-paragraph . ox-jupyter--normalize-string)
+                   (:filter-src-block . ox-jupyter--normalize-string)))
 
 ;;; User Options
 
@@ -61,6 +65,22 @@
   :group 'org-export)
 
 ;;; Helper Functions
+
+(defun ox-jupyter--no-comma-ending (string _backend _info)
+  "Trim a trailing comma from STRING.
+
+This is used as a post-processing function run on the final
+results of transcoding."
+  (if (string-match ",[ \n\t\r]+\\'" string)
+      (replace-match "" t t string)
+    string))
+
+(defun ox-jupyter--normalize-string (string _backend _info)
+  "Wrap `org-element-normalize-string' for use as a filter function on STRING.
+
+This is used as a post-processing function run over the results
+of cell-level transcoding."
+  (org-element-normalize-string string))
 
 (defun ox-jupyter--json-encode-alist (alist)
   "JSON encode ALIST, and always pretty print."
@@ -135,7 +155,7 @@ contextual information."
 
 ;;;###autoload
 (defun ox-jupyter-export-as-json
-    (&optional async subtreep visible-only _body-only ext-plist)
+    (&optional async subtreep visible-only body-only ext-plist)
   "Export current buffer to a Jupyter notebook JSON buffer.
 
 If narrowing is active in the current buffer, only export its
@@ -164,11 +184,13 @@ still be overriden by file-local settings.
 Export is done in a buffer named \"*Org Jupyter Export*\", which
 will be displayed when `org-export-show-temporary-export-buffer'
 is non-nil."
-  (ignore async subtreep visible-only ext-plist))
+  (interactive)
+  (org-export-to-buffer 'jupyter "*Org Jupyter Export*"
+    async subtreep visible-only body-only ext-plist))
 
 ;;;###autoload
 (defun ox-jupyter-export-to-json
-    (&optional async subtreep visible-only _body-only ext-plist)
+    (&optional async subtreep visible-only body-only ext-plist)
   "Export current buffer to a Jupyter notebook JSON file.
 
 If narrowing is active in the current buffer, only export its
@@ -195,7 +217,10 @@ parameters overriding Org default settings.  This argument will
 still be overriden by file-local settings.
 
 Return output file's name."
-  (ignore async subtreep visible-only ext-plist))
+  (interactive)
+  (let ((file (org-export-output-file-name ".ipynb" subtreep)))
+    (org-export-to-file 'jupyter file
+      async subtreep visible-only body-only ext-plist)))
 
 (provide 'ox-jupyter)
 ;;; ox-jupyter.el ends here
