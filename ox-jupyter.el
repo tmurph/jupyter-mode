@@ -62,7 +62,13 @@
 (defgroup org-export-jupyter nil
   "Options for exporting Org mode files to Jupyter notebooks."
   :tag "Org Jupyter"
+  :prefix "org-export-jupyter-"
   :group 'org-export)
+
+(defcustom org-export-jupyter-major-mode 'js-mode
+  "The major mode to apply to the *Org Jupyter Export* buffer."
+  :type 'symbol
+  :group 'org-export-jupyter)
 
 ;;; Helper Functions
 
@@ -186,7 +192,8 @@ will be displayed when `org-export-show-temporary-export-buffer'
 is non-nil."
   (interactive)
   (org-export-to-buffer 'jupyter "*Org Jupyter Export*"
-    async subtreep visible-only body-only ext-plist))
+    async subtreep visible-only body-only ext-plist
+    (symbol-function org-export-jupyter-major-mode)))
 
 ;;;###autoload
 (defun ox-jupyter-export-to-json
