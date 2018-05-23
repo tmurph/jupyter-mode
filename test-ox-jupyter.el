@@ -7,6 +7,10 @@
 (require 'ert)
 (require 'ox-jupyter)
 
+(defun ox-jupyter-concat-multiline (&rest lines)
+  "Join LINES with \n in between."
+  (mapconcat #'identity lines "\n"))
+
 (defmacro ert-deftest-parametrize (prefix params values &rest body)
   "Create ERT deftests from a list of parameters.
 
