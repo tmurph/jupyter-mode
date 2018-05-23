@@ -93,12 +93,15 @@ holding contextual information."
 
 ;;; Paragraph
 
-(defun ox-jupyter--paragraph (paragraph contents info)
+(defun ox-jupyter--paragraph (_paragraph contents _info)
   "Transcode a PARAGRAPH element from Org to Jupyter notebook JSON.
 
 CONTENTS holds the contents of the paragraph.  INFO is a plist
 holding contextual information."
-  (ignore paragraph contents info))
+  (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
+         (markdown-alist (apply #'ox-jupyter--markdown-alist
+                                markdown-text)))
+    (ox-jupyter--json-encode-alist markdown-alist)))
 
 ;;; Src Block
 
