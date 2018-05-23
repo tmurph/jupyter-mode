@@ -45,10 +45,16 @@
 ;;; Define Back-end
 
 (org-export-define-backend 'jupyter
-  '((headline . ox-jupyter--headline)
+  '((bold . ox-jupyter--bold)
+    (code . ox-jupyter--code)
+    (headline . ox-jupyter--headline)
+    (italic . ox-jupyter--italic)
     (paragraph . ox-jupyter--paragraph)
     (section . ox-jupyter--section)
-    (src-block . ox-jupyter--src-block))
+    (src-block . ox-jupyter--src-block)
+    (strike-through . ox-jupyter--strike-through)
+    (underline . ox-jupyter--underline)
+    (verbatim . ox-jupyter--verbatim))
   :menu-entry
   '(?j "Export to Jupyter Notebook"
        ((?J "As JSON buffer" ox-jupyter-export-as-json)
@@ -108,6 +114,24 @@ of cell-level transcoding."
     ("outputs" . ,(vector))
     ("source" . ,lines)))
 
+;;; Bold
+
+(defun ox-jupyter--bold (_bold contents _info)
+  "Transcode BOLD text to strongly emphasized Jupyter notebook JSON.
+
+CONTENTS is the text to be emphasized.  INFO is a plist of
+contextual information."
+  (format "**%s**" contents))
+
+;;; Code
+
+(defun ox-jupyter--code (code _contents _info)
+  "Transcode CODE text to backticked Jupyter notebook JSON.
+
+CONTENTS is nil for some reason.  INFO is a plist of contextual
+information."
+  (format "`%s`" (org-element-property :value code)))
+
 ;;; Headline
 
 (defun ox-jupyter--headline (headline contents _info)
@@ -128,6 +152,15 @@ headline.  INFO is a plist holding contextual information."
     (if contents
         (concat encoded-string "\n" contents)
       encoded-string)))
+
+;;; Italic
+
+(defun ox-jupyter--italic (_italic contents _info)
+  "Transcode ITALIC text to emphasized Jupyter notebook JSON.
+
+CONTENTS is the text to be emphasized.  INFO is a plist of
+contextual information."
+  (format "_%s_" contents))
 
 ;;; Paragraph
 
@@ -169,6 +202,33 @@ contextual information."
          (code-text (split-string (string-trim-right code-value) "\n"))
          (code-alist (apply #'ox-jupyter--code-alist code-text)))
     (ox-jupyter--json-encode-alist code-alist)))
+
+;;; Strike-Through
+
+(defun ox-jupyter--strike-through (_strike-through contents _info)
+  "Transcode STRIKE-THROUGH text to emphasized Jupyter notebook JSON.
+
+CONTENTS is the text to be emphasized.  INFO is a plist of
+contextual information."
+  (format "~~%s~~" contents))
+
+;;; Underline
+
+(defun ox-jupyter--underline (_underline contents _info)
+  "Transcode UNDERLINE text to emphasized Jupyter notebook JSON.
+
+CONTENTS is the text to be emphasized.  INFO is a plist of
+contextual information."
+  (format "_%s_" contents))
+
+;;; Verbatim
+
+(defun ox-jupyter--verbatim (verbatim _contents _info)
+  "Transcode VERBATIM text to backticked Jupyter notebook JSON.
+
+CONTENTS is nil for some reason.  INFO is a plist of contextual
+information."
+  (format "`%s`" (org-element-property :value verbatim)))
 
 ;;; End-user functions
 
