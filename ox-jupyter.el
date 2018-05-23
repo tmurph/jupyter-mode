@@ -86,8 +86,8 @@
 (defun ox-jupyter--headline (headline _contents _info)
   "Transcode a HEADLINE element from Org to Jupyter notebook JSON.
 
-CONTENTS holds the contents of the headline.  INFO is a plist
-holding contextual information."
+CONTENTS is the concatenation of parsed subelements of the
+headline.  INFO is a plist holding contextual information."
   (let* ((raw-value (org-element-property :raw-value headline))
          (level (org-element-property :level headline))
          (headline-text (with-temp-buffer
@@ -104,8 +104,8 @@ holding contextual information."
 (defun ox-jupyter--paragraph (_paragraph contents _info)
   "Transcode a PARAGRAPH element from Org to Jupyter notebook JSON.
 
-CONTENTS holds the contents of the paragraph.  INFO is a plist
-holding contextual information."
+CONTENTS is the concatenation of parsed subelements of the
+paragraph.  INFO is a plist of contextual information."
   (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
@@ -116,8 +116,8 @@ holding contextual information."
 (defun ox-jupyter--src-block (src-block _contents _info)
   "Transcode a SRC-BLOCK element from Org to Jupyter notebook JSON.
 
-CONTENTS holds the contents of the src-block.  INFO is a plist
-holding contextual information."
+CONTENTS is the contents of the src-block.  INFO is a plist of
+contextual information."
   (let* ((code-value (org-element-property :value src-block))
          (preserve-indent-p
           (org-element-property :preserve-indent src-block))
