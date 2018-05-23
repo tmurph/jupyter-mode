@@ -28,5 +28,19 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            into result
            finally return (cons 'progn result)))
 
+(ert-deftest-parametrize ox-jupyter-headline
+  (headline contents info expected-text)
+  (('(headline (:raw-value "Example" :level 1))
+    nil nil (ox-jupyter-concat-multiline
+             "{"
+             "  \"cell_type\": \"markdown\","
+             "  \"metadata\": null,"
+             "  \"source\": ["
+             "    \"# Example\""
+             "  ]"
+             "}")))
+  (should (equal (ox-jupyter--headline headline contents info)
+                 expected-text)))
+
 (provide 'test-ox-jupyter)
 ;;; test-ox-jupyter.el ends here

@@ -62,12 +62,24 @@
 
 ;;; Headline
 
-(defun ox-jupyter--headline (headline contents info)
+(defun ox-jupyter--headline (headline _contents _info)
   "Transcode a HEADLINE element from Org to Jupyter notebook JSON.
 
 CONTENTS holds the contents of the headline.  INFO is a plist
 holding contextual information."
-  (ignore headline contents info))
+  (let* ((raw-value (org-element-property :raw-value headline))
+         (level (org-element-property :level headline))
+         (headline-text (with-temp-buffer
+                          (dotimes (_ level)
+                            (insert ?#))
+                          (insert ? )
+                          (insert raw-value)
+                          (buffer-string)))
+         (headline-alist `(("cell_type" . "markdown")
+                           ("metadata")
+                           ("source" ,headline-text)))
+         (json-encoding-pretty-print t))
+    (json-encode-alist headline-alist)))
 
 ;;; Paragraph
 
