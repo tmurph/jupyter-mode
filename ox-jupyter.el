@@ -152,8 +152,7 @@ headline.  INFO is a plist holding contextual information."
   (let* ((raw-value (org-element-property :raw-value headline))
          (level (org-export-get-relative-level headline info))
          (headline-text (with-temp-buffer
-                          (dotimes (_ level)
-                            (insert ?#))
+                          (insert (make-string level ?#))
                           (insert ? )
                           (insert raw-value)
                           (buffer-string)))
