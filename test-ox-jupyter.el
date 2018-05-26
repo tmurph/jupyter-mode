@@ -29,18 +29,18 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            finally return (cons 'progn result)))
 
 (ert-deftest-parametrize ox-jupyter-headline
-  (headline contents info expected-text)
+  (headline expected-text)
   (('(headline (:raw-value "Example" :level 1))
-    nil nil (ox-jupyter-concat-multiline
-             "{"
-             "  \"cell_type\": \"markdown\","
-             "  \"metadata\": {"
-             "  },"
-             "  \"source\": ["
-             "    \"# Example\""
-             "  ]"
-             "},")))
-  (should (equal (ox-jupyter--headline headline contents info)
+    (ox-jupyter-concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"# Example\""
+     "  ]"
+     "},")))
+  (should (equal (ox-jupyter--headline headline nil nil)
                  expected-text)))
 
 (ert-deftest-parametrize ox-jupyter-item
@@ -100,9 +100,8 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                  expected-text)))
 
 (ert-deftest-parametrize ox-jupyter-src-block
-  (src-block contents info expected-text)
+  (src-block expected-text)
   (('(src-block (:language "jupyter" :value "some code\n"))
-    nil nil
     (ox-jupyter-concat-multiline
      "{"
      "  \"cell_type\": \"code\","
@@ -115,7 +114,6 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  ]"
      "},"))
    ('(src-block (:value "code\nthat spans\nmulti lines"))
-    nil nil
     (ox-jupyter-concat-multiline
      "{"
      "  \"cell_type\": \"code\","
@@ -130,7 +128,6 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  ]"
      "},"))
    ('(src-block (:value "  code\n  that comes\n  indented"))
-    nil nil
     (ox-jupyter-concat-multiline
      "{"
      "  \"cell_type\": \"code\","
@@ -144,7 +141,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"indented\""
      "  ]"
      "},")))
-  (should (equal (ox-jupyter--src-block src-block contents info)
+  (should (equal (ox-jupyter--src-block src-block nil nil)
                  expected-text)))
 
 (provide 'test-ox-jupyter)
