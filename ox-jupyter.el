@@ -46,7 +46,10 @@
     (code . ox-jupyter--code)
     (headline . ox-jupyter--headline)
     (italic . ox-jupyter--italic)
+    (item . ox-jupyter--item)
+    (link . ox-jupyter--link)
     (paragraph . ox-jupyter--paragraph)
+    (plain-list . ox-jupyter--plain-list)
     (section . ox-jupyter--section)
     (src-block . ox-jupyter--src-block)
     (strike-through . ox-jupyter--strike-through)
@@ -153,6 +156,49 @@ CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "_%s_" contents))
 
+(defun ox-jupyter--item (item contents _info)
+  "Transcode a list ITEM element from Org to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the
+item.  INFO is a plist of contextual information."
+  (concat (org-element-property :bullet item) contents))
+
+(defun ox-jupyter--file-link (link contents)
+  "Transcode a file LINK element from Org to Jupyter notebook JSON.
+
+CONTENTS is the description part of the link, or nil."
+  (let ((link-path (org-element-property :path link)))
+    (if contents
+        (format "[%s](%s)" contents link-path)
+      (format "[%s](%s)" link-path link-path))))
+
+(defun ox-jupyter--fuzzy-link (_link contents _info)
+  "Transcode a fuzzy LINK element from Org to Jupyter notebook JSON.
+
+CONTENTS is the description part of the link, or nil.  INFO is a
+plist of contextual information."
+  contents)
+
+(defun ox-jupyter--web-link (link contents)
+  "Transcode a web LINK element from Org to Jupyter notebook JSON.
+
+CONTENTS is the description part of the link, or nil."
+  (let ((raw-link (org-element-property :raw-link link)))
+    (if contents
+        (format "[%s](%s)" contents raw-link)
+      raw-link)))
+
+(defun ox-jupyter--link (link contents info)
+  "Transcode a LINK element from Org to Jupyter notebook JSON.
+
+CONTENTS is the description part of the link, or nil.  INFO is a
+plist of contextual information."
+  (cl-case (intern (org-element-property :type link))
+    ((http https mailto) (ox-jupyter--web-link link contents))
+    (file (ox-jupyter--file-link link contents))
+    (fuzzy (ox-jupyter--fuzzy-link link contents info))
+    (t (ox-jupyter--fuzzy-link link contents info))))
+
 (defun ox-jupyter--section-paragraph (contents)
   "Transcode the CONTENTS of a section paragraph."
   (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
@@ -174,6 +220,16 @@ paragraph.  INFO is a plist of contextual information."
     (cl-case parent-type
       ('section (ox-jupyter--section-paragraph contents))
       ('item (ox-jupyter--list-item-paragraph contents)))))
+
+(defun ox-jupyter--plain-list (_plain-list contents _info)
+  "Transcode a PLAIN-LIST element from Org to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the list.
+INFO is a plist of contextual information."
+  (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
+         (markdown-alist (apply #'ox-jupyter--markdown-alist
+                                markdown-text)))
+    (ox-jupyter--json-encode-alist markdown-alist)))
 
 (defun ox-jupyter--section (_section contents _info)
   "Transcode a SECTION element from Org to Jupyter notebook JSON.

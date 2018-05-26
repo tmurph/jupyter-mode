@@ -43,6 +43,28 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ox-jupyter--headline headline contents info)
                  expected-text)))
 
+(ert-deftest-parametrize ox-jupyter-item
+  (item contents expected-text)
+  (('(item (:bullet "- ")) "item text\n"
+    "- item text\n")
+   ('(item (:bullet "- ")) "multi\n  line\n  text\n"
+    "- multi\n  line\n  text\n"))
+  (should (equal (ox-jupyter--item item contents nil)
+                 expected-text)))
+
+(ert-deftest-parametrize ox-jupyter-link
+  (link contents expected-text)
+  (('(link (:type "http" :raw-link "http://www.example.com")) nil
+    "http://www.example.com")
+   ('(link (:type "http" :raw-link "http://www.example.com")) "description"
+    "[description](http://www.example.com)")
+   ('(link (:type "file" :path "/path/to/file")) nil
+    "[/path/to/file](/path/to/file)")
+   ('(link (:type "file" :path "/path/to/file")) "description"
+    "[description](/path/to/file)"))
+  (should (equal (ox-jupyter--link link contents nil)
+                 expected-text)))
+
 (ert-deftest-parametrize ox-jupyter-paragraph
   (paragraph contents expected-text)
   (('(paragraph (:parent (section nil nil))) "section paragraph\n"
@@ -58,6 +80,23 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
    ('(paragraph (:parent (item nil nil))) "list item paragraph\n"
     "list item paragraph\n"))
   (should (equal (ox-jupyter--paragraph paragraph contents nil)
+                 expected-text)))
+
+(ert-deftest-parametrize ox-jupyter-plain-list
+  (plain-list contents expected-text)
+  (('(plain-list (:type unordered)) "- a\n- plain\n- list\n"
+    (ox-jupyter-concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"- a\n\","
+     "    \"- plain\n\","
+     "    \"- list\n\""
+     "  ]"
+     "},")))
+  (should (equal (ox-jupyter--plain-list plain-list contents nil)
                  expected-text)))
 
 (ert-deftest-parametrize ox-jupyter-src-block
