@@ -636,7 +636,8 @@ are provided, pass them to `jupyter--initialize-kernel'."
             session-cons (cons session kernel))
       (push session-cons jupyter--session-kernels-alist)
       (jupyter--wait-for-ready kernel)
-      (jupyter--initialize-session kernel session))
+      (jupyter--initialize-session kernel session)
+      (jupyter--wait-for-ready kernel))
     session-cons))
 
 (defun jupyter--finalize-session (session)
