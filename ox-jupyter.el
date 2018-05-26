@@ -95,6 +95,18 @@ This is used as a post-processing function run over the results
 of cell-level transcoding."
   (org-element-normalize-string string))
 
+(defun ox-jupyter--split-string (string)
+  "Like (split-string STRING \"\\n\") but don't eat the newlines."
+  (let ((start 0) end
+        result)
+    (while (string-match "\n" string start)
+      (setq end (match-end 0))
+      (push (substring string start end) result)
+      (setq start end))
+    (unless (= start (length string))
+      (push (substring string start) result))
+    (nreverse result)))
+
 (defun ox-jupyter--json-encode-alist (alist)
   "JSON encode ALIST, and always pretty print."
   (let ((json-encoding-pretty-print t))
@@ -201,7 +213,7 @@ plist of contextual information."
 
 (defun ox-jupyter--section-paragraph (contents)
   "Transcode the CONTENTS of a section paragraph."
-  (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
+  (let* ((markdown-text (ox-jupyter--split-string contents))
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
     (ox-jupyter--json-encode-alist markdown-alist)))
@@ -226,7 +238,7 @@ paragraph.  INFO is a plist of contextual information."
 
 CONTENTS is the concatenation of parsed subelements of the list.
 INFO is a plist of contextual information."
-  (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
+  (let* ((markdown-text (ox-jupyter--split-string contents))
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
     (ox-jupyter--json-encode-alist markdown-alist)))
@@ -252,7 +264,7 @@ contextual information."
                          (insert code-value)
                          (org-do-remove-indentation)
                          (buffer-string))))
-         (code-text (split-string (string-trim-right code-value) "\n"))
+         (code-text (ox-jupyter--split-string code-value))
          (code-alist (apply #'ox-jupyter--code-alist code-text)))
     (ox-jupyter--json-encode-alist code-alist)))
 
