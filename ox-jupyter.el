@@ -64,7 +64,8 @@
   :filters-alist '((:filter-body . ox-jupyter--no-comma-ending)
                    (:filter-headline . ox-jupyter--normalize-string)
                    (:filter-paragraph . ox-jupyter--normalize-string)
-                   (:filter-src-block . ox-jupyter--normalize-string)))
+                   (:filter-src-block . ox-jupyter--normalize-string))
+  :options-alist '((:with-sub-superscript nil "^" nil)))
 
 ;;; User Options
 
