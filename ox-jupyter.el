@@ -47,6 +47,7 @@
     (headline . ox-jupyter--headline)
     (italic . ox-jupyter--italic)
     (item . ox-jupyter--item)
+    (line-break . ox-jupyter--line-break)
     (link . ox-jupyter--link)
     (paragraph . ox-jupyter--paragraph)
     (plain-list . ox-jupyter--plain-list)
@@ -200,6 +201,13 @@ CONTENTS is the description part of the link, or nil."
     (if contents
         (format "[%s](%s)" contents raw-link)
       raw-link)))
+
+(defun ox-jupyter--line-break (_line-break _contents _info)
+  "Transcode a LINE-BREAK element from Org to Jupyter notebook JSON.
+
+CONTENTS is always null, but a required part of the Org Export
+API.  INFO is a plist of contextual information."
+  "  \n")
 
 (defun ox-jupyter--link (link contents info)
   "Transcode a LINK element from Org to Jupyter notebook JSON.
