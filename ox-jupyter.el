@@ -153,15 +153,27 @@ CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "_%s_" contents))
 
-(defun ox-jupyter--paragraph (_paragraph contents _info)
-  "Transcode a PARAGRAPH element from Org to Jupyter notebook JSON.
-
-CONTENTS is the concatenation of parsed subelements of the
-paragraph.  INFO is a plist of contextual information."
+(defun ox-jupyter--section-paragraph (contents)
+  "Transcode the CONTENTS of a section paragraph."
   (let* ((markdown-text (split-string (string-trim-right contents) "\n"))
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
     (ox-jupyter--json-encode-alist markdown-alist)))
+
+(defun ox-jupyter--list-item-paragraph (contents)
+  "Transcode the CONTENTS of a list item paragraph."
+  contents)
+
+(defun ox-jupyter--paragraph (paragraph contents _info)
+  "Transcode a PARAGRAPH element from Org to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the
+paragraph.  INFO is a plist of contextual information."
+  (let ((parent-type (org-element-type
+                      (org-element-property :parent paragraph))))
+    (cl-case parent-type
+      ('section (ox-jupyter--section-paragraph contents))
+      ('item (ox-jupyter--list-item-paragraph contents)))))
 
 (defun ox-jupyter--section (_section contents _info)
   "Transcode a SECTION element from Org to Jupyter notebook JSON.
