@@ -144,13 +144,13 @@ CONTENTS is nil for some reason.  INFO is a plist of contextual
 information."
   (format "`%s`" (org-element-property :value code)))
 
-(defun ox-jupyter--headline (headline contents _info)
+(defun ox-jupyter--headline (headline contents info)
   "Transcode a HEADLINE element from Org to Jupyter notebook JSON.
 
 CONTENTS is the concatenation of parsed subelements of the
 headline.  INFO is a plist holding contextual information."
   (let* ((raw-value (org-element-property :raw-value headline))
-         (level (org-element-property :level headline))
+         (level (org-export-get-relative-level headline info))
          (headline-text (with-temp-buffer
                           (dotimes (_ level)
                             (insert ?#))
