@@ -33,9 +33,6 @@
 ;;
 ;; Enable by customizing `org-export-backends' before loading Org, or
 ;; with (require 'ox-jupyter).
-;;
-;; The library will take care of setting up Org Source buffers with the
-;; appropriate kernel language.
 
 ;;; Code:
 
