@@ -280,3 +280,24 @@ If your code block will produce a graph, specify =:results file= in the header. 
   - like, this sounds like a job for factories and classes and such.  but fuck.  that.  noise.
   - maybe just have a “ssh true” flag in the kernel object?
   - okay, so I think all my code looks right.  for some weird reason, though, when I go to initialize the kernel it’s not creating the ssh connection file that I need to set up local ports?  uh, what?  like I can literally follow the code, pause right after it starts the inferior process, read the message at the top “use --existing blah-ssh.json” but I can’t find any blah-ssh.json file anywhere in my filesystem.  wtf.
+- [-] support org export
+  - [X] support paragraphs -> markdown
+    - [X] top-level paragraphs
+    - [X] paragraphs in bulleted lists
+  - [X] support code blocks -> code cell
+  - [X] support *bold*, /italics/, =verbatim=, and other light org markup
+  - [X] support bulleted lists
+  - [ ] support numbered lists
+  - [-] support links
+    - [X] http, https, mailto
+    - [X] relative file links
+    - [ ] internal fuzzy links
+      - per [[http://sebastianraschka.com/Articles/2014_ipython_internal_links.html][this blogpost]] I can definitely make this work
+      - but I think I’ll need to do some parse tree surgery in advance.  looks like, to do it right, I wanna add a special =paragraph= section before the target that just contains an HTML anchor tag, or something like that.  or maybe before we even parse the buffer I just insert the ATTR_HTML or whatever?
+  - what to do about running multiple non-code blocks together?
+    - Org parser treats paragraphs, bulleted lists, source blocks, etc all at the same level
+    - so we naively just create separate notebook cells for each
+    - what if we wanted a string of paragraphs and lists to merge into one cell?
+    - could maybe do some parsing of the tree behind the scenes
+    - need a delimiter … org parser has the notion of a “horizontal rule”, it’s just 5 or more dashes
+    - but markdown already supports horizontal rule …
