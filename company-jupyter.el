@@ -1,4 +1,4 @@
-;;; company-jupyter.el --- company completion from Jupyter kernels
+;;; company-jupyter.el --- company completion from Jupyter kernels  -*- lexical-binding: t; -*-
 
 ;; Author: Trevor Murphy <trevor.m.murphy@gmail.com>
 ;; Maintainer: Trevor Murphy <trevor.m.murphy@gmail.com>
