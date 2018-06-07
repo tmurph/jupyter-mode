@@ -415,5 +415,54 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ox-jupyter--src-block src-block contents nil)
                  expected-text)))
 
+(ert-deftest-parametrize ox-jupyter-template
+  (contents info version expected-text)
+  (((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example1\""
+     "  },"
+     "  {"
+     "    \"cell_type\": \"example2\""
+     "  }"
+     "]")
+    '(:jupyter-metadata "") "4.0"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"example1\""
+     "    },"
+     "    {"
+     "      \"cell_type\": \"example2\""
+     "    }"
+     "  ],"
+     "  \"metadata\": {"
+     "  },"
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
+     "},"))
+   ((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example\""
+     "  }"
+     "]")
+    '(:jupyter-metadata "something") "4.0"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"example\""
+     "    }"
+     "  ],"
+     "  \"metadata\": \"something\","
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
+     "},")))
+  (let ((ox-jupyter--nbformat version))
+    (should (equal (ox-jupyter--template contents info)
+                   expected-text))))
+
 (provide 'test-ox-jupyter)
 ;;; test-ox-jupyter.el ends here

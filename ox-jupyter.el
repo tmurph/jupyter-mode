@@ -57,6 +57,7 @@
     (section . ox-jupyter--section)
     (src-block . ox-jupyter--src-block)
     (strike-through . ox-jupyter--strike-through)
+    (template . ox-jupyter--template)
     (underline . ox-jupyter--underline)
     (verbatim . ox-jupyter--verbatim))
   :menu-entry
@@ -68,9 +69,14 @@
                    (:filter-paragraph . ox-jupyter--normalize-string)
                    (:filter-parse-tree . ox-jupyter--merge-code-results)
                    (:filter-src-block . ox-jupyter--normalize-string))
-  :options-alist '((:with-sub-superscript nil "^" nil)))
+  :options-alist '((:with-sub-superscript nil "^" nil)
+                   (:jupyter-metadata "METADATA" nil
+                                      org-export-jupyter-metadata space)))
 
 ;;; Constants
+
+(defconst ox-jupyter--nbformat "4.0"
+  "Jupyter Notebook version implemented in this library.")
 
 (defconst ox-jupyter--source-line-max 60
   "The maximum length of a string in the source section of a cell.")
@@ -90,6 +96,11 @@
 (defcustom org-export-jupyter-major-mode 'js-mode
   "The major mode to apply to the *Org Jupyter Export* buffer."
   :type 'symbol
+  :group 'org-export-jupyter)
+
+(defcustom org-export-jupyter-metadata ""
+  "Optional metadata to include in exported notebooks."
+  :type 'string
   :group 'org-export-jupyter)
 
 ;;; Helper Functions
@@ -157,6 +168,18 @@ Default MAX-LENGTH is `ox-jupyter--source-line-max'."
     ("source" . ,lines)))
 
 ;;; Parsing Functions
+(defun ox-jupyter--template-alist
+    (cell-list metadata major-version minor-version)
+  "Return an alist representing the full contents of a Jupyter Notebook.
+
+CELL-LIST is a list of cell data.  METADATA is any optional
+metadata to include.  MAJOR-VERSION and MINOR-VERSION give the
+notebook format version number."
+  `(("cells" . ,cell-list)
+    ("metadata" . ,(or metadata (make-hash-table)))
+    ("nbformat" . ,major-version)
+    ("nbformat_minor" . ,minor-version)))
+
 (defun ox-jupyter--get-code-from (pom)
   "Return the code string from the source code block at POM."
   (save-excursion
@@ -458,6 +481,20 @@ INFO is a plist of contextual information."
 CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "~~%s~~" contents))
+
+(defun ox-jupyter--template (contents info)
+  "Add preamble and postamble to transcoded document CONTENTS.
+
+INFO is a plist of export options."
+  (let* ((cell-list (json-read-from-string contents))
+         (metadata (ignore-errors
+                     (read (plist-get info :jupyter-metadata))))
+         (version-pair (split-string ox-jupyter--nbformat "\\."))
+         (major-version (string-to-number (car version-pair)))
+         (minor-version (string-to-number (cadr version-pair)))
+         (alist (ox-jupyter--template-alist cell-list metadata
+                                            major-version minor-version)))
+    (ox-jupyter--json-encode alist)))
 
 (defun ox-jupyter--underline (_underline contents _info)
   "Transcode UNDERLINE text to emphasized Jupyter notebook JSON.
