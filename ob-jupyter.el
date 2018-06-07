@@ -73,33 +73,33 @@ Currently this returns the contents of the \"stdout\" stream."
        (cdr)))
 
 (defun ob-jupyter--babel-value-to-dataframe
-    (execute-reply-alist &optional rownames colnames)
+    (execute-reply-alist &optional index names)
   "Process the Jupyter EXECUTE-REPLY-ALIST and return a list-of-lists.
 
 This function assumes that the Jupyter reply represents some sort
-of dataframe-like object, so the Babel params :rownames
-and :colnames are overloaded to handle that case specifically.
+of dataframe-like object, so the Babel params :df-index
+and :df-names specify how to handle the index and column names.
 
-Process first row of data according to COLNAMES:
+Process first row of data according to NAMES:
  - if nil, don't do any column name processing
  - if \"yes\", insert an 'hline after the first row of data
  - if \"no\", exclude the first row / column names
 
-Process first column of data according to ROWNAMES:
- - if nil or \"yes\", don't do any row name processing
- - if \"no\", exclude the first column / row names / index column"
+Process first column of data according to INDEX:
+ - if nil or \"yes\", don't do any index processing
+ - if \"no\", exclude the first column / index column"
   (let* ((result-alist (jupyter--execute-result execute-reply-alist))
          (text (cdr (assoc 'text/plain result-alist)))
          (all-rows (split-string text "\n"))
-         (row-fn (if (string= rownames "no")
+         (row-fn (if (string= index "no")
                      (lambda (row) (cdr (split-string row " +")))
                    (lambda (row) (split-string row " +"))))
          results)
     (cond
-     ((string= colnames "yes")
+     ((string= names "yes")
       (push (funcall row-fn (pop all-rows)) results)
       (push 'hline results))
-     ((string= colnames "no")
+     ((string= names "no")
       (pop all-rows)))
     (dolist (row all-rows)
       (push (funcall row-fn row) results))
@@ -156,8 +156,8 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
   "Return the appropriate function to compute results according to Babel PARAMS."
   (let* ((result-type (alist-get :result-type params))
          (result-params (alist-get :result-params params))
-         (rownames (alist-get :rownames params))
-         (colnames (alist-get :colnames params))
+         (df-index (alist-get :df-index params))
+         (df-names (alist-get :df-names params))
          (file (alist-get :file params))
          (output-dir (alist-get :output-dir params))
          (file-ext (alist-get :file-ext params)))
@@ -166,7 +166,7 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
       #'ob-jupyter--babel-output)
      ((member "dataframe" result-params)
       (lambda (alist)
-        (ob-jupyter--babel-value-to-dataframe alist rownames colnames)))
+        (ob-jupyter--babel-value-to-dataframe alist df-index df-names)))
      ((member "file" result-params)
       (lambda (alist)
         (ob-jupyter--babel-value-to-file alist file output-dir file-ext)))
@@ -191,8 +191,8 @@ Extract appropriate values from PARAMS and pass them along with SESSION."
                               ssh-server cmd-args kernel-args)))
 
 (defvar org-babel-default-header-args:jupyter
-  '((:colnames . "yes")
-    (:rownames . "no")
+  '((:df-names . "yes")
+    (:df-index . "no")
     (:session . "default")
     (:kernel . "python")))
 
