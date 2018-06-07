@@ -171,7 +171,40 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  ]"
      "},"))
    ('(paragraph (:parent (item nil nil))) "list item paragraph\n"
-    "list item paragraph\n"))
+    "list item paragraph\n")
+   ('(paragraph (:parent (src-block nil nil)))
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"output_type\": \"display_data\","
+     "  \"data\": {"
+     "    \"image/png\": ["
+     "      \"base-64-encoded-png-data\""
+     "    ]"
+     "  },"
+     "  \"metadata\": {"
+     "    \"image/png\": {"
+     "      \"width\": 640,"
+     "      \"height\": 480"
+     "    }"
+     "  }"
+     "},")
+    (ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"output_type\": \"display_data\","
+     "    \"data\": {"
+     "      \"image/png\": ["
+     "        \"base-64-encoded-png-data\""
+     "      ]"
+     "    },"
+     "    \"metadata\": {"
+     "      \"image/png\": {"
+     "        \"width\": 640,"
+     "        \"height\": 480"
+     "      }"
+     "    }"
+     "  }"
+     "],")))
   (should (equal (ox-jupyter--paragraph paragraph contents nil)
                  expected-text)))
 
@@ -212,8 +245,8 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                  expected-text)))
 
 (ert-deftest-parametrize ox-jupyter-src-block
-  (src-block expected-text)
-  (('(src-block (:language "jupyter" :value "some code\n"))
+  (src-block contents expected-text)
+  (('(src-block (:language "jupyter" :value "some code")) nil
     (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"code\","
@@ -222,10 +255,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  },"
      "  \"outputs\": [],"
      "  \"source\": ["
-     "    \"some code\\n\""
+     "    \"some code\""
      "  ]"
      "},"))
-   ('(src-block (:value "code\nthat spans\nmulti lines"))
+   ('(src-block (:value "code\nthat spans\nmulti lines")) nil
     (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"code\","
@@ -239,7 +272,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"multi lines\""
      "  ]"
      "},"))
-   ('(src-block (:value "  code\n  that comes\n  indented"))
+   ('(src-block (:value "  code\n  that comes\n  indented")) nil
     (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"code\","
@@ -252,8 +285,64 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"that comes\\n\","
      "    \"indented\""
      "  ]"
+     "},"))
+   ('(src-block (:value "no\ntrailing\nnewlines\n")) nil
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": [],"
+     "  \"source\": ["
+     "    \"no\\n\","
+     "    \"trailing\\n\","
+     "    \"newlines\""
+     "  ]"
+     "},"))
+   ('(src-block (:value "code"))
+    (ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"output_type\": \"display_data\","
+     "    \"data\": {"
+     "      \"image/png\": [\"base-64-encoded-png-data\"]"
+     "    },"
+     "    \"metadata\": {"
+     "      \"image/png\": {"
+     "        \"width\": 640,"
+     "        \"height\": 480"
+     "      }"
+     "    }"
+     "  }"
+     "]")
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": ["
+     "    {"
+     "      \"output_type\": \"display_data\","
+     "      \"data\": {"
+     "        \"image/png\": ["
+     "          \"base-64-encoded-png-data\""
+     "        ]"
+     "      },"
+     "      \"metadata\": {"
+     "        \"image/png\": {"
+     "          \"width\": 640,"
+     "          \"height\": 480"
+     "        }"
+     "      }"
+     "    }"
+     "  ],"
+     "  \"source\": ["
+     "    \"code\""
+     "  ]"
      "},")))
-  (should (equal (ox-jupyter--src-block src-block nil nil)
+  (should (equal (ox-jupyter--src-block src-block contents nil)
                  expected-text)))
 
 (provide 'test-ox-jupyter)

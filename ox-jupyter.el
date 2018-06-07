@@ -64,8 +64,13 @@
   :filters-alist '((:filter-body . ox-jupyter--no-comma-ending)
                    (:filter-headline . ox-jupyter--normalize-string)
                    (:filter-paragraph . ox-jupyter--normalize-string)
+                   (:filter-parse-tree . ox-jupyter--merge-code-results)
                    (:filter-src-block . ox-jupyter--normalize-string))
   :options-alist '((:with-sub-superscript nil "^" nil)))
+
+;; External Definitions
+
+(autoload 'org-element-extract-element "org-element")
 
 ;;; User Options
 
@@ -127,12 +132,12 @@ of cell-level transcoding."
     ("metadata" . ,(make-hash-table))
     ("source" . ,lines)))
 
-(defun ox-jupyter--code-alist (&rest lines)
-  "Return a Jupyter Notebook code alist comprising LINES of source."
+(defun ox-jupyter--code-alist (output-data lines)
+  "Return a Jupyter Notebook code alist comprising OUTPUT-DATA and LINES of source code."
   `(("cell_type" . "code")
     ("execution_count")
     ("metadata" . ,(make-hash-table))
-    ("outputs" . ,(vector))
+    ("outputs" . ,(or output-data (vector)))
     ("source" . ,lines)))
 
 ;;; Parsing Functions
@@ -146,6 +151,25 @@ should be a cons of (width . height)."
     ("metadata" ("image/png"
                  ("width" . ,(car size-pair))
                  ("height" . ,(cdr size-pair))))))
+
+(defun ox-jupyter--adopt-next-paragraph-maybe (info code-element)
+  "Adopt a results paragraph (if any) under CODE-ELEMENT.
+
+INFO is a plist of contextual parsing information."
+  (let ((next-element (org-export-get-next-element code-element info)))
+    (when (and (eq 'paragraph (org-element-type next-element))
+               (org-element-property :results next-element))
+      (org-element-extract-element next-element)
+      (org-element-adopt-elements code-element next-element))))
+
+(defun ox-jupyter--merge-code-results (tree _backend info)
+  "Combine source code elements of TREE with subsequent results elements.
+
+BACKEND is required by the Org Export API but is not used here.
+INFO is a plist of contextual parsing information."
+  (org-element-map tree '(src-block babel-call)
+    (apply-partially #'ox-jupyter--adopt-next-paragraph-maybe info) info)
+  tree)
 
 
 (defun ox-jupyter--bold (_bold contents _info)
@@ -294,6 +318,11 @@ plist of contextual information."
   "Transcode the CONTENTS of a list item paragraph."
   contents)
 
+(defun ox-jupyter--results-paragraph (contents)
+  "Transcode the CONTENTS of a code results paragraph."
+  (ox-jupyter--json-encode
+   (list (json-read-from-string contents))))
+
 (defun ox-jupyter--paragraph (paragraph contents _info)
   "Transcode a PARAGRAPH element from Org to Jupyter notebook JSON.
 
@@ -303,7 +332,8 @@ paragraph.  INFO is a plist of contextual information."
                       (org-element-property :parent paragraph))))
     (cl-case parent-type
       ('section (ox-jupyter--section-paragraph contents))
-      ('item (ox-jupyter--list-item-paragraph contents)))))
+      ('item (ox-jupyter--list-item-paragraph contents))
+      ('src-block (ox-jupyter--results-paragraph contents)))))
 
 (defun ox-jupyter--top-level-plain-list (plain-list)
   "Transcode a PLAIN-LIST to Jupyter notebook JSON.
@@ -340,22 +370,28 @@ CONTENTS is the concatenation of parsed subelements of the
 section.  INFO is a plist of contextual information."
   contents)
 
-(defun ox-jupyter--src-block (src-block _contents _info)
+(defun ox-jupyter--src-block (src-block contents _info)
   "Transcode a SRC-BLOCK element from Org to Jupyter notebook JSON.
 
-CONTENTS is the contents of the src-block.  INFO is a plist of
-contextual information."
-  (let* ((code-value (org-element-property :value src-block))
+CONTENTS is the concatenation of parsed subelements of the source
+block.  Normally source blocks don't contain subelements, but we
+merge any results under there with
+`ox-jupyter--merge-code-results'.
+
+INFO is a plist of contextual information."
+  (let* ((code-string (org-element-property :value src-block))
          (preserve-indent-p
           (org-element-property :preserve-indent src-block))
-         (code-value (if preserve-indent-p
-                         code-value
-                       (with-temp-buffer
-                         (insert code-value)
-                         (org-do-remove-indentation)
-                         (buffer-string))))
-         (code-text (ox-jupyter--split-string code-value))
-         (code-alist (apply #'ox-jupyter--code-alist code-text)))
+         (code-string (if preserve-indent-p
+                          code-string
+                        (with-temp-buffer
+                          (insert code-string)
+                          (org-do-remove-indentation)
+                          (buffer-string))))
+         (code-string (ox-jupyter--no-newline-ending code-string))
+         (code-text (ox-jupyter--split-string code-string))
+         (output-data (and contents (json-read-from-string contents)))
+         (code-alist (ox-jupyter--code-alist output-data code-text)))
     (ox-jupyter--json-encode code-alist)))
 
 (defun ox-jupyter--strike-through (_strike-through contents _info)
