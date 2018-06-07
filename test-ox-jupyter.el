@@ -28,6 +28,50 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            into result
            finally return (cons 'progn result)))
 
+(ert-deftest-parametrize ox-jupyter-lob-babel-call
+  (babel-call lob-alist expected-text)
+  (('(babel-call (:call "setup_code"))
+    '((setup_code :ignore "code snippet"
+                  :ignore :ignore :ignore :ignore :ignore))
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": [],"
+     "  \"source\": ["
+     "    \"code snippet\""
+     "  ]"
+     "},")))
+  (let ((org-babel-library-of-babel lob-alist))
+    (should (equal (ox-jupyter--babel-call babel-call nil nil)
+                   expected-text))))
+
+(ert-deftest-parametrize ox-jupyter-buffer-babel-call
+  (babel-call buffer-contents expected-text)
+  (('(babel-call (:call "setup_code"))
+    (ox-jupyter--concat-multiline
+     "#+NAME: setup_code"
+     "#+BEGIN_SRC jupyter"
+     "  code snippet"
+     "#+END_SRC")
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"code\","
+     "  \"execution_count\": null,"
+     "  \"metadata\": {"
+     "  },"
+     "  \"outputs\": [],"
+     "  \"source\": ["
+     "    \"code snippet\""
+     "  ]"
+     "},")))
+  (with-temp-buffer
+    (insert buffer-contents)
+    (should (equal (ox-jupyter--babel-call babel-call nil nil)
+                   expected-text))))
+
 (ert-deftest ox-jupyter-footnote-reference ()
   (let* ((fn '(footnote-reference (:label "1")))
          (contents "rest of the paragraph")

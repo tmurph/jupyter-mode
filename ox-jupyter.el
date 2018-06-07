@@ -43,6 +43,7 @@
 
 (org-export-define-backend 'jupyter
   '((bold . ox-jupyter--bold)
+    (babel-call . ox-jupyter--babel-call)
     (code . ox-jupyter--code)
     (footnote-reference . ox-jupyter--footnote-reference)
     (headline . ox-jupyter--headline)
@@ -155,6 +156,18 @@ Default MAX-LENGTH is `ox-jupyter--source-line-max'."
     ("source" . ,lines)))
 
 ;;; Parsing Functions
+(defun ox-jupyter--get-code-from (pom)
+  "Return the code string from the source code block at POM."
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char pom)
+      (cadr (org-babel-get-src-block-info 'light)))))
+
+(defun ox-jupyter--get-code-from-lob (name)
+  "Return the code associated with NAME in `org-babel-library-of-babel'."
+  (cl-caddr (assq (intern name) org-babel-library-of-babel)))
+
 (defun ox-jupyter--display-data-alist (data size-pair)
   "Return an alist representing a Jupyter Notebook display_data.
 
@@ -192,6 +205,32 @@ INFO is a plist of contextual parsing information."
 CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "**%s**" contents))
+
+(defun ox-jupyter--babel-call (babel-call contents _info)
+  "Transcode a BABEL-CALL from Org to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the babel
+call elements.  Normally babel call elements don't contain
+subelements, but we merge any results under there with
+`ox-jupyter--merge-code-results'.
+
+INFO is a plist of contextual information."
+  (let* ((name (org-element-property :call babel-call))
+         (block-in-buffer-p (save-match-data
+                              ;; returns a buffer position or nil
+                              (org-babel-find-named-block name)))
+         (code-string (if block-in-buffer-p
+                          (ox-jupyter--get-code-from block-in-buffer-p)
+                        (ox-jupyter--get-code-from-lob name)))
+         (code-string (with-temp-buffer
+                        (insert code-string)
+                        (org-do-remove-indentation)
+                        (buffer-string)))
+         (code-string (ox-jupyter--no-newline-ending code-string))
+         (code-text (ox-jupyter--split-string code-string))
+         (output-data (and contents (json-read-from-string contents)))
+         (code-alist (ox-jupyter--code-alist output-data code-text)))
+    (ox-jupyter--json-encode code-alist)))
 
 (defun ox-jupyter--code (code _contents _info)
   "Transcode CODE text to backticked Jupyter notebook JSON.
