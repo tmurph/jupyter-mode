@@ -44,6 +44,7 @@
 (org-export-define-backend 'jupyter
   '((bold . ox-jupyter--bold)
     (code . ox-jupyter--code)
+    (footnote-reference . ox-jupyter--footnote-reference)
     (headline . ox-jupyter--headline)
     (italic . ox-jupyter--italic)
     (item . ox-jupyter--item)
@@ -149,6 +150,16 @@ contextual information."
 CONTENTS is nil for some reason.  INFO is a plist of contextual
 information."
   (format "`%s`" (org-element-property :value code)))
+
+(defun ox-jupyter--footnote-reference (_footnote-reference contents _info)
+  "Transcode FOOTNOTE-REFERENCE to Jupyter notebook JSON.
+
+CONTENTS is the rest of the paragraph after the footnote.  INFO
+is a plist of contextual information.
+
+Currently just returns CONTENTS without processing
+  FOOTNOTE-REFERENCE at all."
+  contents)
 
 (defun ox-jupyter--headline (headline contents info)
   "Transcode a HEADLINE element from Org to Jupyter notebook JSON.

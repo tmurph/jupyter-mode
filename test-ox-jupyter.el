@@ -28,6 +28,13 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            into result
            finally return (cons 'progn result)))
 
+(ert-deftest ox-jupyter-footnote-reference ()
+  (let* ((fn '(footnote-reference (:label "1")))
+         (contents "rest of the paragraph")
+         (expected-text contents))
+    (should (equal (ox-jupyter--footnote-reference fn contents nil)
+                   expected-text))))
+
 (ert-deftest-parametrize ox-jupyter-headline
   (headline expected-text)
   (('(headline (:raw-value "Example" :level 1))
