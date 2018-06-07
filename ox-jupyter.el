@@ -68,6 +68,11 @@
                    (:filter-src-block . ox-jupyter--normalize-string))
   :options-alist '((:with-sub-superscript nil "^" nil)))
 
+;;; Constants
+
+(defconst ox-jupyter--source-line-max 60
+  "The maximum length of a string in the source section of a cell.")
+
 ;; External Definitions
 
 (autoload 'org-element-extract-element "org-element")
@@ -109,16 +114,25 @@ This is used as a post-processing function run over the results
 of cell-level transcoding."
   (org-element-normalize-string string))
 
-(defun ox-jupyter--split-string (string)
-  "Like (split-string STRING \"\\n\") but don't eat the newlines."
-  (let ((start 0) end
-        result)
+(defun ox-jupyter--split-string (string &optional max-length)
+  "Split STRING for Jupyter source sections.
+
+Splits after newlines and after MAX-LENGTH characters from the
+last split.
+
+Default MAX-LENGTH is `ox-jupyter--source-line-max'."
+  (let ((strlen (length string))
+        (max-length (or max-length ox-jupyter--source-line-max))
+        (start 0)
+        end result)
     (while (string-match "\n" string start)
-      (setq end (match-end 0))
+      (setq end (min (match-end 0) (+ start max-length)))
       (push (substring string start end) result)
       (setq start end))
-    (unless (= start (length string))
-      (push (substring string start) result))
+    (while (not (= start strlen))
+      (setq end (min strlen (+ start max-length)))
+      (push (substring string start end) result)
+      (setq start end))
     (nreverse result)))
 
 (defun ox-jupyter--json-encode (object)

@@ -204,7 +204,33 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "      }"
      "    }"
      "  }"
-     "],")))
+     "],"))
+   ('(paragraph (:parent (section nil nil)))
+    (concat "break up really long lines"
+            (make-string (- ox-jupyter--source-line-max
+                            (length "break up really long lines"))
+                         ?-)
+            "at "
+            (format "%s" ox-jupyter--source-line-max)
+            " characters wide")
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     (concat "    \""
+             "break up really long lines"
+             (make-string (- ox-jupyter--source-line-max
+                             (length "break up really long lines"))
+                          ?-)
+             "\",")
+     (concat "    \""
+             "at "
+             (format "%s" ox-jupyter--source-line-max)
+             " characters wide\"")
+     "  ]"
+     "},")))
   (should (equal (ox-jupyter--paragraph paragraph contents nil)
                  expected-text)))
 
