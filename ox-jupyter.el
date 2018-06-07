@@ -31,8 +31,19 @@
 ;; This library supports Org Babel Export of Jupyter code blocks to
 ;; notebook format.
 ;;
-;; Enable by customizing `org-export-backends' before loading Org, or
-;; with (require 'ox-jupyter).
+;; Enable by customizing `org-export-backends' or with
+;;
+;;   (require 'ox-jupyter)
+;;
+;; If you would like to customize how Org opens exported files, use
+;;
+;;   (push '("ipynb" . system) org-file-apps)
+;;
+;; to let the operating system choose how to open the file, or use
+;;
+;;   (push '("ipynb" . "nbopen %s") org-file-apps)
+;;
+;; to specify your own command (in this case "nbopen").
 
 ;;; Code:
 
@@ -63,7 +74,8 @@
   :menu-entry
   '(?j "Export to Jupyter Notebook"
        ((?J "As JSON buffer" ox-jupyter-export-as-json)
-        (?j "As JSON file" ox-jupyter-export-to-json)))
+        (?j "As JSON file" ox-jupyter-export-to-json)
+        (?o "As JSON file and open" ox-jupyter-export-to-json-and-open)))
   :filters-alist '((:filter-final-output ox-jupyter--no-comma-ending
                                          ox-jupyter--fixup-null-metadata
                                          ox-jupyter--fixup-empty-dict)
@@ -611,6 +623,39 @@ Return output file's name."
   (let ((file (org-export-output-file-name ".ipynb" subtreep)))
     (org-export-to-file 'jupyter file
       async subtreep visible-only body-only ext-plist)))
+
+(defun ox-jupyter-export-to-json-and-open
+    (&optional async subtreep visible-only body-only ext-plist)
+  "Export current buffer to a Jupyter notebook file and call `org-open-file'.
+
+If narrowing is active in the current buffer, only export its
+narrowed part.
+
+If a region is active, export just that region.
+
+A non-nil optional argument ASYNC means the process should happen
+asynchronously.  The resulting file should be accessible through
+the `org-export-stack' interface.
+
+When optional argument SUBTREEP is non-nil, export the sub-tree
+at point, extracting information from the headline properties
+first.
+
+When optional argument VISIBLE-ONLY is non-nil, don't export
+contents of hidden elements.
+
+Postional argument BODY-ONLY is required by the Org Export API,
+however it is ignored in this function.
+
+EXT-PLIST, when provided, must be a property list with external
+parameters overriding Org default settings.  This argument will
+still be overriden by file-local settings.
+
+Return output file's name."
+  (let ((file-name (ox-jupyter-export-to-json async subtreep
+                                              visible-only body-only
+                                              ext-plist)))
+    (if async file-name (org-open-file file-name))))
 
 (provide 'ox-jupyter)
 ;;; ox-jupyter.el ends here
