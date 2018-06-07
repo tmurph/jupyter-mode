@@ -136,6 +136,17 @@ of cell-level transcoding."
     ("source" . ,lines)))
 
 ;;; Parsing Functions
+(defun ox-jupyter--display-data-alist (data size-pair)
+  "Return an alist representing a Jupyter Notebook display_data.
+
+DATA should be a list of base64 encoded image data and SIZE-PAIR
+should be a cons of (width . height)."
+  `(("output_type" . "display_data")
+    ("data" ("image/png" . ,data))
+    ("metadata" ("image/png"
+                 ("width" . ,(car size-pair))
+                 ("height" . ,(cdr size-pair))))))
+
 
 (defun ox-jupyter--bold (_bold contents _info)
   "Transcode BOLD text to strongly emphasized Jupyter notebook JSON.
@@ -198,17 +209,46 @@ item.  INFO is a plist of contextual information."
             (and tag tag-sep)
             contents)))
 
+(defun ox-jupyter--link-contents (path)
+  "Encode an image at PATH to base64."
+  (let* ((encoded-data (with-temp-buffer
+                         (insert-file-contents-literally path)
+                         (base64-encode-region (point-min) (point-max))
+                         (split-string (buffer-string) "\n")))
+         (image-size (image-size (create-image path) t))
+         (alist (ox-jupyter--display-data-alist encoded-data image-size)))
+    (ox-jupyter--json-encode alist)))
+
+(defun ox-jupyter--image-link (link contents)
+  "Do something with LINK and CONTENTS."
+  (let* ((link-grandparent (org-element-property
+                            :parent (org-element-property
+                                     :parent link)))
+         (link-in-paragraph-p (eq (org-element-type link-grandparent)
+                                  'section))
+         (link-path (org-element-property :path link)))
+    (if link-in-paragraph-p
+        (format "![%s](%s)" (or contents "") link-path)
+      (ox-jupyter--link-contents link-path))))
+
+(defun ox-jupyter--default-link (path contents)
+  "Transcode a file at PATH to Jupyter notebook JSON.
+
+CONTENTS is the description part of the link, or nil."
+  (if contents
+      (format "[%s](%s)" contents path)
+    (format "[%s](%s)" path path)))
 
 (defun ox-jupyter--file-link (link contents)
   "Transcode a file LINK element from Org to Jupyter notebook JSON.
 
 CONTENTS is the description part of the link, or nil."
   (let ((link-path (org-element-property :path link)))
-    (if contents
-        (format "[%s](%s)" contents link-path)
-      (format "[%s](%s)" link-path link-path))))
+    (if (string-match-p "\\.png\\'" link-path)
+        (ox-jupyter--image-link link contents)
+      (ox-jupyter--default-link link-path contents))))
 
-(defun ox-jupyter--fuzzy-link (_link contents _info)
+(defun ox-jupyter--fuzzy-link (_link contents)
   "Transcode a fuzzy LINK element from Org to Jupyter notebook JSON.
 
 CONTENTS is the description part of the link, or nil.  INFO is a
@@ -231,7 +271,7 @@ CONTENTS is always null, but a required part of the Org Export
 API.  INFO is a plist of contextual information."
   "  \n")
 
-(defun ox-jupyter--link (link contents info)
+(defun ox-jupyter--link (link contents _info)
   "Transcode a LINK element from Org to Jupyter notebook JSON.
 
 CONTENTS is the description part of the link, or nil.  INFO is a
@@ -239,8 +279,8 @@ plist of contextual information."
   (cl-case (intern (org-element-property :type link))
     ((http https mailto) (ox-jupyter--web-link link contents))
     (file (ox-jupyter--file-link link contents))
-    (fuzzy (ox-jupyter--fuzzy-link link contents info))
-    (t (ox-jupyter--fuzzy-link link contents info))))
+    (fuzzy (ox-jupyter--fuzzy-link link contents))
+    (t (ox-jupyter--fuzzy-link link contents))))
 
 (defun ox-jupyter--section-paragraph (contents)
   "Transcode the CONTENTS of a section paragraph."

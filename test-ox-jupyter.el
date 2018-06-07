@@ -65,7 +65,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ox-jupyter--item item contents nil)
                  expected-text)))
 
-(ert-deftest-parametrize ox-jupyter-link
+(ert-deftest-parametrize ox-jupyter-inline-link
   (link contents expected-text)
   (('(link (:type "http" :raw-link "http://www.example.com")) nil
     "http://www.example.com")
@@ -74,9 +74,68 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
    ('(link (:type "file" :path "/path/to/file")) nil
     "[/path/to/file](/path/to/file)")
    ('(link (:type "file" :path "/path/to/file")) "description"
-    "[description](/path/to/file)"))
+    "[description](/path/to/file)")
+   ;; Just FYI, link objects in the Org Element parse tree always match
+   ;; the lineage below.  To distinguish links that are the result of
+   ;; source blocks, the ox-jupyter library includes tree-modifying code
+   ;; the makes the link the grandchild of a source block instead of a
+   ;; section.  See `ox-jupyter--merge-code-results' and
+   ;; `ox-jupyter--adopt-next-paragraph-maybe'.
+   ('(link (:type "file" :path "image.png"
+                  :parent (paragraph (:parent (section)))))
+    "description"
+    "![description](image.png)"))
   (should (equal (ox-jupyter--link link contents nil)
                  expected-text)))
+
+(ert-deftest-parametrize ox-jupyter-image-link
+  (link image-size encoded-data expected-text)
+  (('(link (:type "file" :path "image.png"))
+    '(390 . 280)
+    "base-64-encoded-png-data"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"output_type\": \"display_data\","
+     "  \"data\": {"
+     "    \"image/png\": ["
+     "      \"base-64-encoded-png-data\""
+     "    ]"
+     "  },"
+     "  \"metadata\": {"
+     "    \"image/png\": {"
+     "      \"width\": 390,"
+     "      \"height\": 280"
+     "    }"
+     "  }"
+     "},"))
+   ('(link (:type "file" :path "image.png"))
+    '(640 . 480)
+    (ox-jupyter--concat-multiline
+     "base-64-encoded-line"
+     "base-64-encoded-line")
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"output_type\": \"display_data\","
+     "  \"data\": {"
+     "    \"image/png\": ["
+     "      \"base-64-encoded-line\","
+     "      \"base-64-encoded-line\""
+     "    ]"
+     "  },"
+     "  \"metadata\": {"
+     "    \"image/png\": {"
+     "      \"width\": 640,"
+     "      \"height\": 480"
+     "    }"
+     "  }"
+     "},")))
+  (cl-letf (((symbol-function 'insert-file-contents-literally) #'ignore)
+            ((symbol-function 'base64-encode-region)
+             (lambda (&rest _) (insert encoded-data)))
+            ((symbol-function 'image-size)
+             (lambda (&rest _) image-size)))
+    (should (equal (ox-jupyter--link link nil nil)
+                   expected-text))))
 
 (ert-deftest-parametrize ox-jupyter-paragraph
   (paragraph contents expected-text)
