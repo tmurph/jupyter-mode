@@ -49,6 +49,7 @@
     (headline . ox-jupyter--headline)
     (italic . ox-jupyter--italic)
     (item . ox-jupyter--item)
+    (inner-template . ox-jupyter--inner-template)
     (line-break . ox-jupyter--line-break)
     (link . ox-jupyter--link)
     (paragraph . ox-jupyter--paragraph)
@@ -285,6 +286,10 @@ item.  INFO is a plist of contextual information."
             (and tag (format "**%s**" tag))
             (and tag tag-sep)
             contents)))
+
+(defun ox-jupyter--inner-template (contents _info)
+  "Wrap CONTENTS in square brackets."
+  (format "[%s]" (ox-jupyter--no-comma-ending contents nil nil)))
 
 (defun ox-jupyter--link-contents (path)
   "Encode an image at PATH to base64."
