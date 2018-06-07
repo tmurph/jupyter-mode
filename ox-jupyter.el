@@ -181,7 +181,6 @@ Default MAX-LENGTH is `ox-jupyter--source-line-max'."
     ("outputs" . ,(or output-data (vector)))
     ("source" . ,lines)))
 
-;;; Parsing Functions
 (defun ox-jupyter--template-alist
     (cell-list metadata major-version minor-version)
   "Return an alist representing the full contents of a Jupyter Notebook.
@@ -264,6 +263,8 @@ results of transcoding."
     (while (re-search-forward "{[ \t\n]+}" nil t)
       (replace-match "{}"))
     (buffer-string)))
+
+;;; Parsing Functions
 
 (defun ox-jupyter--bold (_bold contents _info)
   "Transcode BOLD text to strongly emphasized Jupyter notebook JSON.
