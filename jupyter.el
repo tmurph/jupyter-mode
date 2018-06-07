@@ -91,7 +91,7 @@ the packages that use it, e.g. jupyter servers and clients.
 For full details see
 http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
-(defconst jupyter--zmq-max-recv (expt 2 18)
+(defconst jupyter--zmq-max-recv (expt 2 19)
   "The size, in bytes, allocated to read ZMQ messages.")
 
 ;; External Definitions
