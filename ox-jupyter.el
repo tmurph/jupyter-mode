@@ -86,7 +86,13 @@
 
 This is used as a post-processing function run on the final
 results of transcoding."
-  (if (string-match ",[ \n\t\r]+\\'" string)
+  (if (string-match ",[ \n\t\r]*\\'" string)
+      (replace-match "" t t string)
+    string))
+
+(defun ox-jupyter--no-newline-ending (string)
+  "Trim trailing newlines from STRING."
+  (if (string-match "\n+\\'" string)
       (replace-match "" t t string)
     string))
 
