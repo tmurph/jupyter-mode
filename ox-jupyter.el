@@ -284,7 +284,8 @@ plist of contextual information."
 
 (defun ox-jupyter--section-paragraph (contents)
   "Transcode the CONTENTS of a section paragraph."
-  (let* ((markdown-text (ox-jupyter--split-string contents))
+  (let* ((contents (ox-jupyter--no-newline-ending contents))
+         (markdown-text (ox-jupyter--split-string contents))
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
     (ox-jupyter--json-encode markdown-alist)))

@@ -139,14 +139,35 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
 
 (ert-deftest-parametrize ox-jupyter-paragraph
   (paragraph contents expected-text)
-  (('(paragraph (:parent (section nil nil))) "section paragraph\n"
+  (('(paragraph (:parent (section nil nil))) "section paragraph"
     (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"markdown\","
      "  \"metadata\": {"
      "  },"
      "  \"source\": ["
-     "    \"section paragraph\\n\""
+     "    \"section paragraph\""
+     "  ]"
+     "},"))
+   ('(paragraph (:parent (section nil nil))) "no trailing newlines\n"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"no trailing newlines\""
+     "  ]"
+     "},"))
+   ('(paragraph (:parent (section nil nil))) "keep interior\nnewlines\n"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"keep interior\\n\","
+     "    \"newlines\""
      "  ]"
      "},"))
    ('(paragraph (:parent (item nil nil))) "list item paragraph\n"
