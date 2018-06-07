@@ -72,6 +72,32 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ox-jupyter--babel-call babel-call nil nil)
                    expected-text))))
 
+(ert-deftest-parametrize ox-jupyter-example-block
+  (example-block expected-text)
+  (('(example-block (:value "some text" :parent (section)))
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"some text\""
+     "  ]"
+     "},"))
+   ('(example-block (:value "some text" :parent (src-block)))
+    (ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"name\": \"stdout\","
+     "    \"output_type\": \"stream\","
+     "    \"text\": ["
+     "      \"some text\""
+     "    ]"
+     "  }"
+     "],")))
+  (should (equal (ox-jupyter--example-block example-block nil nil)
+                 expected-text)))
+
 (ert-deftest ox-jupyter-footnote-reference ()
   (let* ((fn '(footnote-reference (:label "1")))
          (contents "rest of the paragraph")

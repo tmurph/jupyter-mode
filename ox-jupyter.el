@@ -56,6 +56,7 @@
   '((bold . ox-jupyter--bold)
     (babel-call . ox-jupyter--babel-call)
     (code . ox-jupyter--code)
+    (example-block . ox-jupyter--example-block)
     (footnote-reference . ox-jupyter--footnote-reference)
     (headline . ox-jupyter--headline)
     (italic . ox-jupyter--italic)
@@ -216,13 +217,23 @@ should be a cons of (width . height)."
                  ("width" . ,(car size-pair))
                  ("height" . ,(cdr size-pair))))))
 
+(defun ox-jupyter--stdout-stream-alist (data)
+  "Return an alist representing a Jupyter Notebook stdout stream.
+
+DATA should be a list of strings."
+  `(("name" . "stdout")
+    ("output_type" . "stream")
+    ("text" . ,data)))
+
 (defun ox-jupyter--adopt-next-paragraph-maybe (info code-element)
   "Adopt a results paragraph (if any) under CODE-ELEMENT.
 
 INFO is a plist of contextual parsing information."
-  (let ((next-element (org-export-get-next-element code-element info)))
-    (when (and (eq 'paragraph (org-element-type next-element))
-               (org-element-property :results next-element))
+  (let* ((next-element (org-export-get-next-element code-element info))
+         (adoptable-p (member (org-element-type next-element)
+                              '(paragraph example-block)))
+         (is-results-p (org-element-property :results next-element)))
+    (when (and adoptable-p is-results-p)
       (org-element-extract-element next-element)
       (org-element-adopt-elements code-element next-element))))
 
@@ -305,6 +316,29 @@ INFO is a plist of contextual information."
 CONTENTS is nil for some reason.  INFO is a plist of contextual
 information."
   (format "`%s`" (org-element-property :value code)))
+
+(defun ox-jupyter--section-example-block (contents)
+  "Transcode the CONTENTS of an example block."
+  (ox-jupyter--section-paragraph contents))
+
+(defun ox-jupyter--results-example-block (contents)
+  "Transcode the CONTENTS of a code results example block."
+  (ox-jupyter--json-encode
+   (list (ox-jupyter--stdout-stream-alist
+          (ox-jupyter--split-string contents)))))
+
+(defun ox-jupyter--example-block (example-block _contents _info)
+  "Transcode EXAMPLE-BLOCK object to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the
+example block, which should always be nil.  INFO is a plist of
+contextual information."
+  (let ((parent-type (org-element-type
+                      (org-element-property :parent example-block)))
+        (example-contents (org-element-property :value example-block)))
+    (cl-case parent-type
+      ('section (ox-jupyter--section-example-block example-contents))
+      ('src-block (ox-jupyter--results-example-block example-contents)))))
 
 (defun ox-jupyter--footnote-reference (_footnote-reference contents _info)
   "Transcode FOOTNOTE-REFERENCE to Jupyter notebook JSON.
