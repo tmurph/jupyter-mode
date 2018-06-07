@@ -7,7 +7,7 @@
 (require 'ert)
 (require 'ox-jupyter)
 
-(defun ox-jupyter-concat-multiline (&rest lines)
+(defun ox-jupyter--concat-multiline (&rest lines)
   "Join LINES with \n in between."
   (mapconcat #'identity lines "\n"))
 
@@ -31,7 +31,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
 (ert-deftest-parametrize ox-jupyter-headline
   (headline expected-text)
   (('(headline (:raw-value "Example" :level 1))
-    (ox-jupyter-concat-multiline
+    (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"markdown\","
      "  \"metadata\": {"
@@ -68,7 +68,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
 (ert-deftest-parametrize ox-jupyter-paragraph
   (paragraph contents expected-text)
   (('(paragraph (:parent (section nil nil))) "section paragraph\n"
-    (ox-jupyter-concat-multiline
+    (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"markdown\","
      "  \"metadata\": {"
@@ -85,7 +85,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
 (ert-deftest-parametrize ox-jupyter-plain-list
   (plain-list contents expected-text)
   (('(plain-list (:type unordered)) "- a\n- plain\n- list\n"
-    (ox-jupyter-concat-multiline
+    (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"markdown\","
      "  \"metadata\": {"
@@ -111,7 +111,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
 (ert-deftest-parametrize ox-jupyter-src-block
   (src-block expected-text)
   (('(src-block (:language "jupyter" :value "some code\n"))
-    (ox-jupyter-concat-multiline
+    (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"code\","
      "  \"execution_count\": null,"
@@ -123,7 +123,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  ]"
      "},"))
    ('(src-block (:value "code\nthat spans\nmulti lines"))
-    (ox-jupyter-concat-multiline
+    (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"code\","
      "  \"execution_count\": null,"
@@ -137,7 +137,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  ]"
      "},"))
    ('(src-block (:value "  code\n  that comes\n  indented"))
-    (ox-jupyter-concat-multiline
+    (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"code\","
      "  \"execution_count\": null,"
