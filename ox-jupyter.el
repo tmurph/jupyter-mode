@@ -191,7 +191,13 @@ contextual information."
 
 CONTENTS is the concatenation of parsed subelements of the
 item.  INFO is a plist of contextual information."
-  (concat (org-element-property :bullet item) contents))
+  (let ((tag (car (org-element-property :tag item)))
+        (tag-sep (if (string-match-p "\\` +-" contents) "\n" ": ")))
+    (concat (org-element-property :bullet item)
+            (and tag (format "**%s**" tag))
+            (and tag tag-sep)
+            contents)))
+
 
 (defun ox-jupyter--file-link (link contents)
   "Transcode a file LINK element from Org to Jupyter notebook JSON.

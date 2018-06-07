@@ -55,7 +55,13 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (('(item (:bullet "- ")) "item text\n"
     "- item text\n")
    ('(item (:bullet "- ")) "multi\n  line\n  text\n"
-    "- multi\n  line\n  text\n"))
+    "- multi\n  line\n  text\n")
+   ('(item (:bullet "- " :tag ("I'm important")))
+    "  - a\n  - plain\n  - list\n"
+    "- **I'm important**\n  - a\n  - plain\n  - list\n")
+   ('(item (:bullet "- " :tag ("I'm important")))
+    "more description\n  - a\n  - plain\n  - list\n"
+    "- **I'm important**: more description\n  - a\n  - plain\n  - list\n"))
   (should (equal (ox-jupyter--item item contents nil)
                  expected-text)))
 
