@@ -64,7 +64,9 @@
   '(?j "Export to Jupyter Notebook"
        ((?J "As JSON buffer" ox-jupyter-export-as-json)
         (?j "As JSON file" ox-jupyter-export-to-json)))
-  :filters-alist '((:filter-body . ox-jupyter--no-comma-ending)
+  :filters-alist '((:filter-final-output ox-jupyter--no-comma-ending
+                                         ox-jupyter--fixup-null-metadata
+                                         ox-jupyter--fixup-empty-dict)
                    (:filter-headline . ox-jupyter--normalize-string)
                    (:filter-paragraph . ox-jupyter--normalize-string)
                    (:filter-parse-tree . ox-jupyter--merge-code-results)
@@ -222,6 +224,34 @@ INFO is a plist of contextual parsing information."
     (apply-partially #'ox-jupyter--adopt-next-paragraph-maybe info) info)
   tree)
 
+(defun ox-jupyter--fixup-null-metadata (string _backend _info)
+  "Replace \"metadata: null\" with \"metadata: {}\" in STRING.
+
+This is used as a post-processing function run on the final
+results of transcoding."
+  ;; As long as we are decoding and re-encoding JSON within the
+  ;; recursive parser, we will turn empty dictionaries into nulls in the
+  ;; final transcoded string.  Jupyter requires empty dictionaries, tho.
+  (with-temp-buffer
+    (insert string)
+    (goto-char (point-min))
+    (while (re-search-forward "\"metadata\": null" nil t)
+      (replace-match "\"metadata\": {}"))
+    (buffer-string)))
+
+(defun ox-jupyter--fixup-empty-dict (string _backend _info)
+  "Replace \"{\n}\" with \"{}\" in STRING.
+
+This is used as a post-processing function run on the final
+results of transcoding."
+  ;; As long as we are using `json-encoding-pretty-print' then empty
+  ;; dictionaries will be split across lines.  I think that's ugly.
+  (with-temp-buffer
+    (insert string)
+    (goto-char (point-min))
+    (while (re-search-forward "{[ \t\n]+}" nil t)
+      (replace-match "{}"))
+    (buffer-string)))
 
 (defun ox-jupyter--bold (_bold contents _info)
   "Transcode BOLD text to strongly emphasized Jupyter notebook JSON.
