@@ -105,6 +105,31 @@ Process first column of data according to INDEX:
       (push (funcall row-fn row) results))
     (nreverse results)))
 
+(defun ob-jupyter--babel-value-to-series
+    (execute-reply-alist &optional index)
+  "Process the Jupyter EXECUTE-REPLY-ALIST and return a list-of-lists.
+
+This function assumes that the Jupyter reply represents a Pandas
+Series object, and the Babel param :s-index specifies how to
+handle the index column.
+
+Process first column of data according to INDEX:
+ - if nil or \"yes\", leave the index in place
+ - if \"no\", exclude the first column / index column"
+  (let* ((result-alist (jupyter--execute-result execute-reply-alist))
+         (text (cdr (assoc 'text/plain result-alist)))
+         (all-rows (split-string text "\n"))
+         (row-fn (if (string= index "no")
+                     (lambda (row) (cdr (split-string row " +")))
+                   (lambda (row) (split-string row " +"))))
+         results)
+    (dolist (row all-rows)
+      (push (funcall row-fn row) results))
+    ;; the last entry in the reply is the dtype of the series
+    ;; let's ignore that for now
+    (pop results)
+    (nreverse results)))
+
 (defun ob-jupyter--babel-value-to-file
     (execute-reply-alist &optional file-name output-dir file-ext)
   "Process the Jupyter EXECUTE-REPLY-ALIST and return a filename.
@@ -158,6 +183,7 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
          (result-params (alist-get :result-params params))
          (df-index (alist-get :df-index params))
          (df-names (alist-get :df-names params))
+         (s-index (alist-get :s-index params))
          (file (alist-get :file params))
          (output-dir (alist-get :output-dir params))
          (file-ext (alist-get :file-ext params)))
@@ -167,6 +193,9 @@ EXECUTE-REPLY-ALIST.  Prefer png over svg."
      ((member "dataframe" result-params)
       (lambda (alist)
         (ob-jupyter--babel-value-to-dataframe alist df-index df-names)))
+     ((member "series" result-params)
+      (lambda (alist)
+        (ob-jupyter--babel-value-to-series alist s-index)))
      ((member "file" result-params)
       (lambda (alist)
         (ob-jupyter--babel-value-to-file alist file output-dir file-ext)))
@@ -193,6 +222,7 @@ Extract appropriate values from PARAMS and pass them along with SESSION."
 (defvar org-babel-default-header-args:jupyter
   '((:df-names . "yes")
     (:df-index . "no")
+    (:s-index . "yes")
     (:session . "default")
     (:kernel . "python")))
 
