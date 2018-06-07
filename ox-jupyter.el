@@ -305,15 +305,33 @@ paragraph.  INFO is a plist of contextual information."
       ('section (ox-jupyter--section-paragraph contents))
       ('item (ox-jupyter--list-item-paragraph contents)))))
 
-(defun ox-jupyter--plain-list (_plain-list contents _info)
+(defun ox-jupyter--top-level-plain-list (plain-list)
+  "Transcode a PLAIN-LIST to Jupyter notebook JSON.
+
+PLAIN-LIST is the concatenation of parsed subelements of the list."
+  (let* ((contents (ox-jupyter--no-newline-ending plain-list))
+         (markdown-text (ox-jupyter--split-string contents))
+         (markdown-alist (apply #'ox-jupyter--markdown-alist
+                                markdown-text)))
+    (ox-jupyter--json-encode markdown-alist)))
+
+(defun ox-jupyter--intermediate-plain-list (plain-list)
+  "Indent PLAIN-LIST by two spaces."
+  (with-temp-buffer
+    (insert plain-list)
+    (goto-char (point-min))
+    (org-indent-item-tree)
+    (org-indent-item-tree)
+    (buffer-string)))
+
+(defun ox-jupyter--plain-list (plain-list contents _info)
   "Transcode a PLAIN-LIST element from Org to Jupyter notebook JSON.
 
 CONTENTS is the concatenation of parsed subelements of the list.
 INFO is a plist of contextual information."
-  (let* ((markdown-text (ox-jupyter--split-string contents))
-         (markdown-alist (apply #'ox-jupyter--markdown-alist
-                                markdown-text)))
-    (ox-jupyter--json-encode-alist markdown-alist)))
+  (cl-case (org-element-type (org-element-property :parent plain-list))
+    (item (ox-jupyter--intermediate-plain-list contents))
+    (t (ox-jupyter--top-level-plain-list contents))))
 
 (defun ox-jupyter--section (_section contents _info)
   "Transcode a SECTION element from Org to Jupyter notebook JSON.

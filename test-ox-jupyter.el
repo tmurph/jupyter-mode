@@ -186,9 +186,28 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  \"source\": ["
      "    \"- a\\n\","
      "    \"- plain\\n\","
-     "    \"- list\\n\""
+     "    \"- list\""
      "  ]"
-     "},")))
+     "},"))
+   ('(plain-list (:type unordered)) "- a\n  - nested\n  - plain\n- list\n"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"- a\\n\","
+     "    \"  - nested\\n\","
+     "    \"  - plain\\n\","
+     "    \"- list\""
+     "  ]"
+     "},"))
+   ('(plain-list (:type unordered :parent (item)))
+    "- a\n- plain\n- list\n"
+    "  - a\n  - plain\n  - list\n")
+   ('(plain-list (:type unordered :parent (item)))
+    "- a\n  - nested\n  - plain\n- list\n"
+    "  - a\n    - nested\n    - plain\n  - list\n"))
   (should (equal (ox-jupyter--plain-list plain-list contents nil)
                  expected-text)))
 
