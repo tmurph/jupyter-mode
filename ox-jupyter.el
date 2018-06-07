@@ -51,7 +51,6 @@
     (link . ox-jupyter--link)
     (paragraph . ox-jupyter--paragraph)
     (plain-list . ox-jupyter--plain-list)
-    (plain-text . ox-jupyter--plain-text)
     (section . ox-jupyter--section)
     (src-block . ox-jupyter--src-block)
     (strike-through . ox-jupyter--strike-through)
@@ -241,12 +240,6 @@ paragraph.  INFO is a plist of contextual information."
     (cl-case parent-type
       ('section (ox-jupyter--section-paragraph contents))
       ('item (ox-jupyter--list-item-paragraph contents)))))
-
-(defun ox-jupyter--plain-text (plain-text _info)
-  "Transcode PLAIN-TEXT data from Org to Jupyter notebook JSON.
-
-INFO is a plist of contextual information."
-  (mapconcat #'identity (split-string plain-text "\n" nil "[ \t]+") "\n"))
 
 (defun ox-jupyter--plain-list (_plain-list contents _info)
   "Transcode a PLAIN-LIST element from Org to Jupyter notebook JSON.

@@ -99,15 +99,6 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ox-jupyter--plain-list plain-list contents nil)
                  expected-text)))
 
-(ert-deftest-parametrize ox-jupyter-plain-text
-  (plain-text expected-text)
-  (("a simple string is unchanged\n"
-    "a simple string is unchanged\n")
-   ("trailing spaces  \nshould be removed  \n"
-    "trailing spaces\nshould be removed\n"))
-  (should (equal (ox-jupyter--plain-text plain-text nil)
-                 expected-text)))
-
 (ert-deftest-parametrize ox-jupyter-src-block
   (src-block expected-text)
   (('(src-block (:language "jupyter" :value "some code\n"))
