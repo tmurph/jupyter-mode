@@ -116,10 +116,10 @@ of cell-level transcoding."
       (push (substring string start) result))
     (nreverse result)))
 
-(defun ox-jupyter--json-encode-alist (alist)
-  "JSON encode ALIST, and always pretty print."
+(defun ox-jupyter--json-encode (object)
+  "JSON encode OBJECT, and always pretty print."
   (let ((json-encoding-pretty-print t))
-    (concat (json-encode-alist alist) ",")))
+    (concat (json-encode object) ",")))
 
 (defun ox-jupyter--markdown-alist (&rest lines)
   "Return a Jupyter Notebook markdown alist comprising LINES of source."
@@ -174,7 +174,7 @@ headline.  INFO is a plist holding contextual information."
                           (insert raw-value)
                           (buffer-string)))
          (headline-alist (ox-jupyter--markdown-alist headline-text))
-         (encoded-string (ox-jupyter--json-encode-alist headline-alist)))
+         (encoded-string (ox-jupyter--json-encode headline-alist)))
     (if contents
         (concat encoded-string "\n" contents)
       encoded-string)))
@@ -241,7 +241,7 @@ plist of contextual information."
   (let* ((markdown-text (ox-jupyter--split-string contents))
          (markdown-alist (apply #'ox-jupyter--markdown-alist
                                 markdown-text)))
-    (ox-jupyter--json-encode-alist markdown-alist)))
+    (ox-jupyter--json-encode markdown-alist)))
 
 (defun ox-jupyter--list-item-paragraph (contents)
   "Transcode the CONTENTS of a list item paragraph."
@@ -291,7 +291,7 @@ contextual information."
                          (buffer-string))))
          (code-text (ox-jupyter--split-string code-value))
          (code-alist (apply #'ox-jupyter--code-alist code-text)))
-    (ox-jupyter--json-encode-alist code-alist)))
+    (ox-jupyter--json-encode code-alist)))
 
 (defun ox-jupyter--strike-through (_strike-through contents _info)
   "Transcode STRIKE-THROUGH text to emphasized Jupyter notebook JSON.
