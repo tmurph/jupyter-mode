@@ -232,7 +232,7 @@ DATA should be a list of strings."
 INFO is a plist of contextual parsing information."
   (let* ((next-element (org-export-get-next-element code-element info))
          (adoptable-p (member (org-element-type next-element)
-                              '(paragraph example-block)))
+                              '(paragraph example-block fixed-width)))
          (is-results-p (org-element-property :results next-element)))
     (when (and adoptable-p is-results-p)
       (org-element-extract-element next-element)
