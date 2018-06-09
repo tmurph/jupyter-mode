@@ -221,7 +221,7 @@ Extract appropriate values from PARAMS and pass them along with SESSION."
 
 (defvar org-babel-default-header-args:jupyter
   '((:df-names . "yes")
-    (:df-index . "no")
+    (:df-index . "yes")
     (:s-index . "yes")
     (:session . "default")
     (:kernel . "python")
