@@ -57,6 +57,7 @@
     (babel-call . ox-jupyter--babel-call)
     (code . ox-jupyter--code)
     (example-block . ox-jupyter--example-block)
+    (fixed-width . ox-jupyter--fixed-width)
     (footnote-reference . ox-jupyter--footnote-reference)
     (headline . ox-jupyter--headline)
     (italic . ox-jupyter--italic)
