@@ -340,6 +340,29 @@ contextual information."
       ('section (ox-jupyter--section-example-block example-contents))
       ('src-block (ox-jupyter--results-example-block example-contents)))))
 
+(defun ox-jupyter--section-fixed-width (contents)
+  "Transcode the CONTENTS of an example block."
+  (ox-jupyter--section-paragraph contents))
+
+(defun ox-jupyter--results-fixed-width (contents)
+  "Transcode the CONTENTS of a code results example block."
+  (ox-jupyter--json-encode
+   (list (ox-jupyter--stdout-stream-alist
+          (ox-jupyter--split-string contents)))))
+
+(defun ox-jupyter--fixed-width (fixed-width _contents _info)
+  "Transcode FIXED-WIDTH object to Jupyter notebook JSON.
+
+CONTENTS is the concatenation of parsed subelements of the
+example block, which should always be nil.  INFO is a plist of
+contextual information."
+  (let ((parent-type (org-element-type
+                      (org-element-property :parent fixed-width)))
+        (example-contents (org-element-property :value fixed-width)))
+    (cl-case parent-type
+      ('section (ox-jupyter--section-fixed-width example-contents))
+      ('src-block (ox-jupyter--results-fixed-width example-contents)))))
+
 (defun ox-jupyter--footnote-reference (_footnote-reference contents _info)
   "Transcode FOOTNOTE-REFERENCE to Jupyter notebook JSON.
 
