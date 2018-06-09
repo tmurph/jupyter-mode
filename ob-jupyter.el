@@ -224,7 +224,8 @@ Extract appropriate values from PARAMS and pass them along with SESSION."
     (:df-index . "no")
     (:s-index . "yes")
     (:session . "default")
-    (:kernel . "python")))
+    (:kernel . "python")
+    (:exports . "both")))
 
 (defun org-babel-edit-prep:jupyter (babel-info)
   "Set up the edit buffer per BABEL-INFO.
