@@ -28,6 +28,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
            into result
            finally return (cons 'progn result)))
 
+;;; Unit tests
+
+;; Parsing functions
+
 (ert-deftest-parametrize ox-jupyter-lob-babel-call
   (babel-call lob-alist expected-text)
   (('(babel-call (:call "setup_code"))
