@@ -520,5 +520,49 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ox-jupyter--template contents info)
                    expected-text))))
 
+;; Structure functions
+
+(ert-deftest-parametrize ox-jupyter-merge-after-line-break
+  (initial-structure expected-structure)
+  (('(#0=(section
+          nil
+          #1=(paragraph
+              (:parent #0#)
+              "first paragraph contents"
+              (line-break (:parent #1#)))
+          #2=(paragraph
+              (:parent #0#)
+              "second paragraph contents")))
+    '(#3=(section
+          nil
+          #4=(paragraph
+              (:parent #3#)
+              "first paragraph contents"
+              #5=(line-break
+                  (:parent #4#)
+                  #6=(paragraph
+                      (:parent #5#)
+                      "second paragraph contents"))))))
+   ('(#7=(section
+          nil
+          #8=(paragraph
+              (:parent #7#)
+              "first paragraph contents"
+              (line-break (:parent #8#)))
+          #9=(plain-list
+              (:parent #7#))))
+    '(#10=(section
+           nil
+           #11=(paragraph
+                (:parent #10#)
+                "first paragraph contents"
+                #12=(line-break
+                     (:parent #11#)
+                     #13=(plain-list
+                          (:parent #12#))))))))
+  (should (equal (ox-jupyter--merge-after-line-break
+                  initial-structure nil nil)
+                 expected-structure)))
+
 (provide 'test-ox-jupyter)
 ;;; test-ox-jupyter.el ends here

@@ -238,6 +238,21 @@ INFO is a plist of contextual parsing information."
       (org-element-extract-element next-element)
       (org-element-adopt-elements code-element next-element))))
 
+(defun ox-jupyter--adopt-after-line-break-maybe (info line-break)
+  "Adopt the next element after LINE-BREAK.
+
+INFO is a plist of contextual parsing information."
+  (let ((current-element line-break)
+        next-element)
+    (while (not next-element)
+      (setq next-element (org-export-get-next-element
+                          current-element info)
+            current-element (org-export-get-parent-element
+                             current-element)))
+    (when (member (org-element-type next-element) '(paragraph plain-list))
+      (org-element-extract-element next-element)
+      (org-element-adopt-elements line-break next-element))))
+
 (defun ox-jupyter--merge-code-results (tree _backend info)
   "Combine source code elements of TREE with subsequent results elements.
 
@@ -245,6 +260,15 @@ BACKEND is required by the Org Export API but is not used here.
 INFO is a plist of contextual parsing information."
   (org-element-map tree '(src-block babel-call)
     (apply-partially #'ox-jupyter--adopt-results-paragraph-maybe info) info)
+  tree)
+
+(defun ox-jupyter--merge-after-line-break (tree _backend info)
+  "Combine line break elements of TREE with subsequent paragraphs.
+
+BACKEND is required by the Org Export API but is not used here.
+INFO is a plist of contextual parsing information."
+  (org-element-map tree '(line-break)
+    (apply-partially #'ox-jupyter--adopt-after-line-break-maybe info) info)
   tree)
 
 (defun ox-jupyter--fixup-null-metadata (string _backend _info)
