@@ -108,25 +108,21 @@ http://jupyter-client.readthedocs.io/en/latest/messaging.html#versioning")
 
 (defcustom jupyter-runtime-dir "~/Library/Jupyter/runtime"
   "The directory to look for runtime connection files."
-  :type 'string
-  :group 'jupyter)
+  :type 'string)
 
 (defcustom jupyter-command "jupyter-console"
   "Command to start the interactive interpreter."
-  :type 'string
-  :group 'jupyter)
+  :type 'string)
 
 (defcustom jupyter-command-args '("--simple-prompt")
   "Default arguments for the interactive interpreter."
-  :type '(repeat string)
-  :group 'jupyter)
+  :type '(repeat string))
 
 (defcustom jupyter-poll-msec 5
   "The wait time (in msec) between polls to Jupyter sockets.
 
 A shorter wait time increases Emacs CPU load."
-  :type 'integer
-  :group 'jupyter)
+  :type 'integer)
 
 (defcustom jupyter-default-timeout-msec 1000
   "The wait time (in msec) before timing out polls to Jupyter sockets.
@@ -137,8 +133,7 @@ will poll forever, hogging resources.
 
 To recover in that case, call `deferred:clear-queue'."
   :type '(choice (integer :tag "Timeout msec")
-                 (const :tag "Never time out" nil))
-  :group 'jupyter)
+                 (const :tag "Never time out" nil)))
 
 ;; ZMQ ffi
 
