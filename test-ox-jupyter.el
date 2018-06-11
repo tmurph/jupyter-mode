@@ -330,7 +330,9 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
              (format "%s" ox-jupyter--source-line-max)
              " characters wide\"")
      "  ]"
-     "},")))
+     "},"))
+   ('(paragraph (:parent (line-break nil nil))) "post line break\n"
+    "post line break\n"))
   (should (equal (ox-jupyter--paragraph paragraph contents nil)
                  expected-text)))
 
