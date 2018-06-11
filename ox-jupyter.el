@@ -226,7 +226,7 @@ DATA should be a list of strings."
     ("output_type" . "stream")
     ("text" . ,data)))
 
-(defun ox-jupyter--adopt-next-paragraph-maybe (info code-element)
+(defun ox-jupyter--adopt-results-paragraph-maybe (info code-element)
   "Adopt a results paragraph (if any) under CODE-ELEMENT.
 
 INFO is a plist of contextual parsing information."
@@ -244,7 +244,7 @@ INFO is a plist of contextual parsing information."
 BACKEND is required by the Org Export API but is not used here.
 INFO is a plist of contextual parsing information."
   (org-element-map tree '(src-block babel-call)
-    (apply-partially #'ox-jupyter--adopt-next-paragraph-maybe info) info)
+    (apply-partially #'ox-jupyter--adopt-results-paragraph-maybe info) info)
   tree)
 
 (defun ox-jupyter--fixup-null-metadata (string _backend _info)
