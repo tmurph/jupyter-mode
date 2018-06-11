@@ -237,6 +237,13 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ox-jupyter--link link nil nil)
                    expected-text))))
 
+(ert-deftest-parametrize ox-jupyter-line-break
+  (line-break contents expected-text)
+  (('(line-break) nil "  \n")
+   ('(line-break) "next paragraph" "  \nnext paragraph"))
+  (should (equal (ox-jupyter--line-break line-break contents nil)
+                 expected-text)))
+
 (ert-deftest-parametrize ox-jupyter-paragraph
   (paragraph contents expected-text)
   (('(paragraph (:parent (section nil nil))) "section paragraph"

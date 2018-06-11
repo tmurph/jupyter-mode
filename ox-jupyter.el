@@ -494,12 +494,12 @@ CONTENTS is the description part of the link, or nil."
         (format "[%s](%s)" contents raw-link)
       raw-link)))
 
-(defun ox-jupyter--line-break (_line-break _contents _info)
+(defun ox-jupyter--line-break (_line-break contents _info)
   "Transcode a LINE-BREAK element from Org to Jupyter notebook JSON.
 
 CONTENTS is always null, but a required part of the Org Export
 API.  INFO is a plist of contextual information."
-  "  \n")
+  (concat "  \n" contents))
 
 (defun ox-jupyter--link (link contents _info)
   "Transcode a LINK element from Org to Jupyter notebook JSON.
