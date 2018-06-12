@@ -542,10 +542,10 @@ paragraph.  INFO is a plist of contextual information."
   (let ((parent-type (org-element-type
                       (org-element-property :parent paragraph))))
     (cl-case parent-type
-      ('section (ox-jupyter--section-paragraph contents))
-      ('item (ox-jupyter--list-item-paragraph contents))
-      ('src-block (ox-jupyter--results-paragraph contents))
-      ('line-break (ox-jupyter--post-line-break-paragraph contents)))))
+      (section (ox-jupyter--section-paragraph contents))
+      (item (ox-jupyter--list-item-paragraph contents))
+      (src-block (ox-jupyter--results-paragraph contents))
+      (line-break (ox-jupyter--post-line-break-paragraph contents)))))
 
 (defun ox-jupyter--top-level-plain-list (plain-list)
   "Transcode a PLAIN-LIST to Jupyter notebook JSON.
