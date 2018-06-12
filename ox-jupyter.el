@@ -565,6 +565,10 @@ PLAIN-LIST is the concatenation of parsed subelements of the list."
     (org-indent-item-tree)
     (buffer-string)))
 
+(defun ox-jupyter--post-line-break-plain-list (plain-list)
+  "Transcode a PLAIN-LIST that follows a line break."
+  plain-list)
+
 (defun ox-jupyter--plain-list (plain-list contents _info)
   "Transcode a PLAIN-LIST element from Org to Jupyter notebook JSON.
 
@@ -572,6 +576,7 @@ CONTENTS is the concatenation of parsed subelements of the list.
 INFO is a plist of contextual information."
   (cl-case (org-element-type (org-element-property :parent plain-list))
     (item (ox-jupyter--intermediate-plain-list contents))
+    (line-break (ox-jupyter--post-line-break-plain-list contents))
     (t (ox-jupyter--top-level-plain-list contents))))
 
 (defun ox-jupyter--section (_section contents _info)

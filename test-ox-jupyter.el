@@ -368,7 +368,10 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     "  - a\n  - plain\n  - list\n")
    ('(plain-list (:type unordered :parent (item)))
     "- a\n  - nested\n  - plain\n- list\n"
-    "  - a\n    - nested\n    - plain\n  - list\n"))
+    "  - a\n    - nested\n    - plain\n  - list\n")
+   ('(plain-list (:type unordered :parent (line-break)))
+    "- no changes"
+    "- no changes"))
   (should (equal (ox-jupyter--plain-list plain-list contents nil)
                  expected-text)))
 
