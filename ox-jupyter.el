@@ -83,7 +83,8 @@
                                          ox-jupyter--fixup-empty-dict)
                    (:filter-headline . ox-jupyter--normalize-string)
                    (:filter-paragraph . ox-jupyter--normalize-string)
-                   (:filter-parse-tree . ox-jupyter--merge-code-results)
+                   (:filter-parse-tree ox-jupyter--merge-code-results
+                                       ox-jupyter--merge-after-line-break)
                    (:filter-src-block . ox-jupyter--normalize-string))
   :options-alist '((:with-sub-superscript nil "^" nil)
                    (:jupyter-metadata "METADATA" nil
