@@ -50,8 +50,7 @@
 
 (defcustom ob-jupyter-redisplay-images nil
   "If t, call `org-redisplay-inline-images' after any source block inserts a file."
-  :type 'boolean
-  :group 'ob-jupyter)
+  :type 'boolean)
 
 (declare-function org-src--get-lang-mode "org-src" (lang))
 (declare-function org-redisplay-inline-images "org" nil)

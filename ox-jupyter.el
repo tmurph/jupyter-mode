@@ -112,13 +112,11 @@
 
 (defcustom org-export-jupyter-major-mode 'js-mode
   "The major mode to apply to the *Org Jupyter Export* buffer."
-  :type 'symbol
-  :group 'org-export-jupyter)
+  :type 'symbol)
 
 (defcustom org-export-jupyter-metadata ""
   "Optional metadata to include in exported notebooks."
-  :type 'string
-  :group 'org-export-jupyter)
+  :type 'string)
 
 ;;; Helper Functions
 
