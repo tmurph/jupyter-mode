@@ -244,12 +244,15 @@ If your code block will produce a graph, specify =:results file= in the header. 
 - [ ] implement R and Julia support … the framework is there, just not the content
 - [ ] instrument completion … how much can I get from speeding up my code?
 - [X] fix comint startup bug
-- [ ] refactor / deep dive fixup PUB / SUB model
+- [X] refactor / deep dive fixup PUB / SUB model
   - I’m getting bitten by the “slow subscriber” problem
   - http://zguide.zeromq.org/page:all#Getting-the-Message-Out
   - right now I’m just sleeping for a tenth of a second whenever I connect a new SUB socket … but that’s explicitly contra-indicated in the article
   - eventually, come back and implement their proposed solutions
   - some sort of proxy?  where I have one proxy sub that lives forever, and a proxy pub that handles ephemeral connections?
+  - no, it’s [[http://zguide.zeromq.org/page:all#Node-Coordination]]
+  - wait, are you fucking insane?  they explicitly build in a sleep(1) in there?!
+  - yeah, okay, there is *literally* no way to do this without just sleeping for a bit
 - [ ] maybe support fontification and eldoc in org source blocks?
   - eldoc of the code from the org file is maybe doable
     - [ ] remove the “user error” from naked jupyter-mode
@@ -281,12 +284,12 @@ If your code block will produce a graph, specify =:results file= in the header. 
   - maybe just have a “ssh true” flag in the kernel object?
   - okay, so I think all my code looks right.  for some weird reason, though, when I go to initialize the kernel it’s not creating the ssh connection file that I need to set up local ports?  uh, what?  like I can literally follow the code, pause right after it starts the inferior process, read the message at the top “use --existing blah-ssh.json” but I can’t find any blah-ssh.json file anywhere in my filesystem.  wtf.
 - [-] support org export
-  - [-] support paragraphs -> markdown
-    - [-] top-level paragraphs
+  - [X] support paragraphs -> markdown
+    - [X] top-level paragraphs
       - this is basically done, but it’s exporting a final newline that I don’t particularly like.  too tired to fix that now, though
     - [X] paragraphs in bulleted lists
   - [X] support code blocks -> code cell
-  - [ ] support =#+CALL= -> code cell
+  - [X] support =#+CALL= -> code cell
     - thankfully, these get their own specific parse element, =babel-call=.  yay!
   - [X] support *bold*, /italics/, =verbatim=, and other light org markup
   - [X] support bulleted lists
@@ -301,17 +304,20 @@ If your code block will produce a graph, specify =:results file= in the header. 
   - [-] export code results
     - [-] export images
       - not really done, but so much progress.  there’s a lot of hard-coding going on (only PNG file endings, always assumes 640x480 image size) but that stuff should be easier to modify as we go along.  the real hard part was pulling the image data through at all.
-    - [ ] export output streams / verbatim results
+    - [X] export output streams / verbatim results
+      - jfc this was hard, had to munge the parse tree.  interesting tool, tho
     - [ ] export dataframes
-  - [-] export top-level structre
+  - [-] export top-level structure
     - [X] list-of-cells
     - [X] version info
     - [-] metadata
       - this is sorta there.  we can export arbitrary strings with a keyword (yay!) but I’m not satisfied with the implementation yet.  how to export stuff like that git filter setting?  should we bother with kernel info?
-  - what to do about running multiple non-code blocks together?
+  - [X] run multiple paragraphs / paragraph-like elements together
     - Org parser treats paragraphs, bulleted lists, source blocks, etc all at the same level
     - so we naively just create separate notebook cells for each
     - what if we wanted a string of paragraphs and lists to merge into one cell?
     - could maybe do some parsing of the tree behind the scenes
     - need a delimiter … org parser has the notion of a “horizontal rule”, it’s just 5 or more dashes
-    - but markdown already supports horizontal rule …
+    - let’s just use the line break =\\= feature
+    - one line break means “merge the next paragraph / plain list”
+    - extra line breaks include additional spaces
