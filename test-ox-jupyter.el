@@ -78,14 +78,14 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
 
 (ert-deftest-parametrize ox-jupyter-example-block
   (example-block expected-text)
-  (('(example-block (:value "some text" :parent (section)))
+  (('(example-block (:value "    some text" :parent (section)))
     (ox-jupyter--concat-multiline
      "{"
      "  \"cell_type\": \"markdown\","
      "  \"metadata\": {"
      "  },"
      "  \"source\": ["
-     "    \"some text\""
+     "    \"    some text\""
      "  ]"
      "},"))
    ('(example-block (:value "some text" :parent (src-block)))
