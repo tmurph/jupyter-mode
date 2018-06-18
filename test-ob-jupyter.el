@@ -120,6 +120,22 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
   (should (equal (ob-jupyter--babel-value-to-dataframe alist rownames colnames)
                  expected-table)))
 
+(ert-deftest-parametrize ob-jupyter-babel-value-to-series
+  (alist s-index expected-table)
+  ((`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "Intercept         0.105491\n"
+                          "np.log(chi2_p)   -0.021823\n"
+                          "dtype: float64")))))))
+    nil
+    '(("Intercept" "0.105491")
+      ("np.log(chi2_p)" "-0.021823"))))
+  (should (equal (ob-jupyter--babel-value-to-series alist s-index)
+                 expected-table)))
+
 (ert-deftest-parametrize ob-jupyter-babel-value-to-file
   (alist file-name output-dir file-ext expected-name)
   (('((iopub
