@@ -45,7 +45,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (ob-jupyter--babel-value alist) expected))))
 
 (ert-deftest-parametrize ob-jupyter-babel-value-to-dataframe
-  (alist rownames colnames expected-table)
+  (alist df-index df-names expected-table)
   ((`((iopub
        ((header (msg_type . "execute_result"))
         (content
@@ -117,7 +117,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       ("samus" "neutral-a" "17")
       ("samus" "f-tilt" "31")
       ("samus" "d-tilt" "39"))))
-  (should (equal (ob-jupyter--babel-value-to-dataframe alist rownames colnames)
+  (should (equal (ob-jupyter--babel-value-to-dataframe alist df-index df-names)
                  expected-table)))
 
 (ert-deftest-parametrize ob-jupyter-babel-value-to-series
