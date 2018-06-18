@@ -132,7 +132,18 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                           "dtype: float64")))))))
     nil
     '(("Intercept" "0.105491")
-      ("np.log(chi2_p)" "-0.021823"))))
+      ("np.log(chi2_p)" "-0.021823")))
+   (`((iopub
+       ((header (msg_type . "execute_result"))
+        (content
+         (data
+          (text/plain . ,(concat
+                          "Intercept         0.105491\n"
+                          "np.log(chi2_p)   -0.021823\n"
+                          "dtype: float64")))))))
+    "no"
+    '(("0.105491")
+      ("-0.021823"))))
   (should (equal (ob-jupyter--babel-value-to-series alist s-index)
                  expected-table)))
 
