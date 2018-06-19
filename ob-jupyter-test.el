@@ -1,4 +1,4 @@
-;;; test-ob-jupyter --- Unit tests for the Jupyter library
+;;; ob-jupyter-test --- Unit tests for the Jupyter library
 
 ;;; Commentary:
 ;; Every library needs a test suite.
@@ -187,5 +187,5 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                     alist file-name output-dir file-ext)
                    expected-name))))
 
-(provide 'test-ob-jupyter)
-;;; test-ob-jupyter.el ends here
+(provide 'ob-jupyter-test)
+;;; ob-jupyter-test.el ends here

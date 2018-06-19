@@ -1,4 +1,4 @@
-;;; test-jupyter --- Unit tests for the Jupyter library
+;;; jupyter-test --- Unit tests for the Jupyter library
 
 ;;; Commentary:
 ;; Every library needs a test suite.
@@ -412,5 +412,5 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     (should (equal (jupyter--matches alist)
                    expected-lst))))
 
-(provide 'test-jupyter)
-;;; test-jupyter.el ends here
+(provide 'jupyter-test)
+;;; jupyter-test.el ends here

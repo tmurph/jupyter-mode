@@ -1,4 +1,4 @@
-;;; test-company-jupyter --- Unit tests for the Jupyter library
+;;; company-jupyter-test --- Unit tests for the Jupyter library
 
 ;;; Commentary:
 ;; Every library needs a test suite.
@@ -67,5 +67,5 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
       (company-jupyter--prefix nil pos code)
       (should (equal company-jupyter--prefix-cache expected-cache)))))
 
-(provide 'test-company-jupyter)
-;;; test-company-jupyter.el ends here
+(provide 'company-jupyter-test)
+;;; company-jupyter-test.el ends here

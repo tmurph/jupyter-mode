@@ -1,4 +1,4 @@
-;;; test-ox-jupyter --- Unit tests for the Jupyter library
+;;; ox-jupyter-test --- Unit tests for the Jupyter library
 
 ;;; Commentary:
 ;; Every library needs a test suite.
@@ -576,5 +576,5 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                   initial-structure nil nil)
                  expected-structure)))
 
-(provide 'test-ox-jupyter)
-;;; test-ox-jupyter.el ends here
+(provide 'ox-jupyter-test)
+;;; ox-jupyter-test.el ends here
