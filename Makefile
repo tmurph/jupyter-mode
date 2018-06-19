@@ -2,10 +2,10 @@ all: test
 
 test:
 	cask emacs -batch -L ../emacs-ffi -L . \
-	  -l test-jupyter.el \
-	  -l test-company-jupyter.el \
-	  -l test-ob-jupyter.el \
-	  -l test-ox-jupyter.el \
+	  -l jupyter-test.el \
+	  -l company-jupyter-test.el \
+	  -l ob-jupyter-test.el \
+	  -l ox-jupyter-test.el \
 	  -f ert-run-tests-batch-and-exit
 
 install:
