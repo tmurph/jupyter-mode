@@ -175,12 +175,14 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     "[/path/to/file](/path/to/file)")
    ('(link (:type "file" :path "/path/to/file")) "description"
     "[description](/path/to/file)")
-   ;; Just FYI, link objects in the Org Element parse tree always match
-   ;; the lineage below.  To distinguish links that are the result of
+   ;; Just FYI, the default Org Element parser creates inline link
+   ;; objects that always match the following lineage pattern in the
+   ;; parse tree.  However, to distinguish links that are the result of
    ;; source blocks, the ox-jupyter library includes tree-modifying code
    ;; the makes the link the grandchild of a source block instead of a
    ;; section.  See `ox-jupyter--merge-code-results' and
-   ;; `ox-jupyter--adopt-next-paragraph-maybe'.
+   ;; `ox-jupyter--adopt-next-paragraph-maybe'.  See the
+   ;; ox-jupyter-image-link tests to see how those links are handled.
    ('(link (:type "file" :path "image.png"
                   :parent (paragraph (:parent (section)))))
     "description"
