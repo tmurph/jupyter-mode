@@ -641,8 +641,8 @@ contextual information."
 
 INFO is a plist of export options."
   (let* ((cell-list (json-read-from-string contents))
-         (metadata (ignore-errors
-                     (read (plist-get info :jupyter-metadata))))
+         (metadata (plist-get info :jupyter-metadata))
+         (metadata (ignore-errors (and metadata (read metadata))))
          (version-pair (split-string ox-jupyter--nbformat "\\."))
          (major-version (string-to-number (car version-pair)))
          (minor-version (string-to-number (cadr version-pair)))
