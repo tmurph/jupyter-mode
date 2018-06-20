@@ -207,8 +207,12 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
     "![description](image.png)")
    ('(link (:type "fuzzy" :path "*headline")) "description"
     "[description](#headline)")
+   ('(link (:type "fuzzy" :path "*headline with spaces")) "description"
+    "[description](#headline-with-spaces)")
    ('(link (:type "custom-id" :raw-link "#headline")) "description"
-    "[description](#headline)"))
+    "[description](#headline)")
+   ('(link (:type "custom-id" :raw-link "#with spaces")) "description"
+    "[description](#with-spaces)"))
   (should (equal (ox-jupyter--link link contents nil)
                  expected-text)))
 
@@ -573,7 +577,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "      \"metadata\": {"
      "      },"
      "      \"source\": ["
-     "        \"- [link to me](#link to me)\""
+     "        \"- [link to me](#link-to-me)\""
      "      ]"
      "    },"
      "    {"

@@ -163,6 +163,13 @@ Default MAX-LENGTH is `ox-jupyter--source-line-max'."
       (setq start end))
     (nreverse result)))
 
+(defun ox-jupyter--escape-link-text (text)
+  "Translate \" \" to \"-\" in TEXT.
+
+This is different from standard URL escaping rules, but hey, it
+seems to be what Jupyter internal links want."
+  (replace-regexp-in-string " " "-" text))
+
 (defun ox-jupyter--json-encode (object)
   "JSON encode OBJECT, and always pretty print."
   (let ((json-encoding-pretty-print t))
@@ -500,7 +507,8 @@ CONTENTS is the description part of the link, or nil."
 CONTENTS is the description part of the link, or nil."
   (let ((link-path (org-element-property :path link)))
     (if (string-match "\\`\\*\\(.+\\)" link-path)
-        (format "[%s](#%s)" contents (match-string 1 link-path))
+        (format "[%s](#%s)" contents (ox-jupyter--escape-link-text
+                                      (match-string 1 link-path)))
       (ox-jupyter--default-link link-path contents))))
 
 (defun ox-jupyter--web-link (link contents)
@@ -517,7 +525,8 @@ CONTENTS is the description part of the link, or nil."
 
 CONTENTS is the description part of the link, or nil."
   (format "[%s](%s)" (or contents "")
-          (org-element-property :raw-link link)))
+          (ox-jupyter--escape-link-text
+           (org-element-property :raw-link link))))
 
 (defun ox-jupyter--link (link contents _info)
   "Transcode a LINK element from Org to Jupyter notebook JSON.
@@ -645,7 +654,8 @@ INFO is a plist used as a communication channel."
     (concat
      (make-string indent ? )
      "- "
-     (format "[%s](#%s)" raw-value raw-value))))
+     (format "[%s](#%s)" raw-value (ox-jupyter--escape-link-text
+                                    raw-value)))))
 
 (defun ox-jupyter--toc-text (info &optional depth)
   "Build a TOC, as a bulleted list of links to headlines.
