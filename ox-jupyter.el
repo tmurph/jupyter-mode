@@ -410,10 +410,20 @@ headline.  INFO is a plist holding contextual information."
                           (insert raw-value)
                           (buffer-string)))
          (headline-alist (ox-jupyter--markdown-alist headline-text))
-         (encoded-string (ox-jupyter--json-encode headline-alist)))
+         (encoded-headline (ox-jupyter--json-encode headline-alist))
+         (custom-id (org-element-property :CUSTOM_ID headline))
+         (id-link-text (and custom-id
+                            (format "<a id='%s'></a>" custom-id)))
+         (id-link-alist (and custom-id
+                             (ox-jupyter--markdown-alist id-link-text)))
+         (encoded-id-link (and custom-id
+                               (ox-jupyter--json-encode id-link-alist)))
+         (encoded-headline (if custom-id
+                               (concat encoded-id-link "\n" encoded-headline)
+                             encoded-headline)))
     (if contents
-        (concat encoded-string "\n" contents)
-      encoded-string)))
+        (concat encoded-headline "\n" contents)
+      encoded-headline)))
 
 (defun ox-jupyter--italic (_italic contents _info)
   "Transcode ITALIC text to emphasized Jupyter notebook JSON.
@@ -484,12 +494,14 @@ CONTENTS is the description part of the link, or nil."
         (ox-jupyter--image-link link contents)
       (ox-jupyter--default-link link-path contents))))
 
-(defun ox-jupyter--fuzzy-link (_link contents)
+(defun ox-jupyter--fuzzy-link (link contents)
   "Transcode a fuzzy LINK element from Org to Jupyter notebook JSON.
 
-CONTENTS is the description part of the link, or nil.  INFO is a
-plist of contextual information."
-  contents)
+CONTENTS is the description part of the link, or nil."
+  (let ((link-path (org-element-property :path link)))
+    (if (string-match "\\`\\*\\(.+\\)" link-path)
+        (format "[%s](#%s)" contents (match-string 1 link-path))
+      (ox-jupyter--default-link link-path contents))))
 
 (defun ox-jupyter--web-link (link contents)
   "Transcode a web LINK element from Org to Jupyter notebook JSON.
@@ -500,12 +512,20 @@ CONTENTS is the description part of the link, or nil."
         (format "[%s](%s)" contents raw-link)
       raw-link)))
 
+(defun ox-jupyter--custom-id-link (link contents)
+  "Transcode a custom-id LINK element from Org to Jupyter notebook JSON.
+
+CONTENTS is the description part of the link, or nil."
+  (format "[%s](%s)" (or contents "")
+          (org-element-property :raw-link link)))
+
 (defun ox-jupyter--link (link contents _info)
   "Transcode a LINK element from Org to Jupyter notebook JSON.
 
 CONTENTS is the description part of the link, or nil.  INFO is a
 plist of contextual information."
   (cl-case (intern (org-element-property :type link))
+    (custom-id (ox-jupyter--custom-id-link link contents))
     ((http https mailto) (ox-jupyter--web-link link contents))
     (file (ox-jupyter--file-link link contents))
     (fuzzy (ox-jupyter--fuzzy-link link contents))

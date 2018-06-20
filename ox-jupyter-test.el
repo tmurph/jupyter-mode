@@ -146,6 +146,24 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  \"source\": ["
      "    \"# Example\""
      "  ]"
+     "},"))
+   ('(headline (:raw-value "Link to me" :level 1 :CUSTOM_ID "unique"))
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"<a id='unique'></a>\""
+     "  ]"
+     "},"
+     "{"
+     "  \"cell_type\": \"markdown\","
+     "  \"metadata\": {"
+     "  },"
+     "  \"source\": ["
+     "    \"# Link to me\""
+     "  ]"
      "},")))
   (should (equal (ox-jupyter--headline headline nil nil)
                  expected-text)))
@@ -186,7 +204,11 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
    ('(link (:type "file" :path "image.png"
                   :parent (paragraph (:parent (section)))))
     "description"
-    "![description](image.png)"))
+    "![description](image.png)")
+   ('(link (:type "fuzzy" :path "*headline")) "description"
+    "[description](#headline)")
+   ('(link (:type "custom-id" :raw-link "#headline")) "description"
+    "[description](#headline)"))
   (should (equal (ox-jupyter--link link contents nil)
                  expected-text)))
 
