@@ -584,6 +584,35 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  },"
      "  \"nbformat\": 4,"
      "  \"nbformat_minor\": 0"
+     "},"))
+   ((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example\""
+     "  }"
+     "]")
+    '(:with-title t :title ("Title"))
+    "4.0"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"markdown\","
+     "      \"metadata\": {"
+     "      },"
+     "      \"source\": ["
+     "        \"# Title\\n\","
+     "        \"-----\""
+     "      ]"
+     "    },"
+     "    {"
+     "      \"cell_type\": \"example\""
+     "    }"
+     "  ],"
+     "  \"metadata\": {"
+     "  },"
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
      "},")))
   (let ((ox-jupyter--nbformat version))
     (should (equal (ox-jupyter--template contents info)

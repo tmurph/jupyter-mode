@@ -671,13 +671,22 @@ the depth of the table."
                                     toc-markdown-text)))
     (list toc-markdown-alist)))
 
+(defun ox-jupyter--title (title)
+  "Build a TITLE alist suitable for parsing to JSON."
+  (list (apply #'ox-jupyter--markdown-alist
+               (ox-jupyter--split-string (format "# %s\n-----" title)))))
+
 (defun ox-jupyter--template (contents info)
   "Add preamble and postamble to transcoded document CONTENTS.
 
 INFO is a plist of export options."
-  (let* ((toc-depth (plist-get info :with-toc))
+  (let* ((title-p (plist-get info :with-title))
+         (title-list (and title-p (ox-jupyter--title
+                                   (car (plist-get info :title)))))
+         (toc-depth (plist-get info :with-toc))
          (toc-list (and toc-depth (ox-jupyter--toc info toc-depth)))
-         (cell-list (vconcat toc-list (json-read-from-string contents)))
+         (cell-list (vconcat title-list toc-list
+                             (json-read-from-string contents)))
          (metadata (plist-get info :jupyter-metadata))
          (metadata (ignore-errors (and metadata (read metadata))))
          (version-pair (split-string ox-jupyter--nbformat "\\."))
