@@ -438,6 +438,13 @@ item.  INFO is a plist of contextual information."
   "Wrap CONTENTS in square brackets."
   (format "[%s]" (ox-jupyter--no-comma-ending contents nil nil)))
 
+(defun ox-jupyter--line-break (_line-break contents _info)
+  "Transcode a LINE-BREAK element from Org to Jupyter notebook JSON.
+
+CONTENTS is always null, but a required part of the Org Export
+API.  INFO is a plist of contextual information."
+  (concat "  \n" contents))
+
 (defun ox-jupyter--link-contents (path)
   "Encode an image at PATH to base64."
   (let* ((encoded-data (with-temp-buffer
@@ -492,13 +499,6 @@ CONTENTS is the description part of the link, or nil."
     (if contents
         (format "[%s](%s)" contents raw-link)
       raw-link)))
-
-(defun ox-jupyter--line-break (_line-break contents _info)
-  "Transcode a LINE-BREAK element from Org to Jupyter notebook JSON.
-
-CONTENTS is always null, but a required part of the Org Export
-API.  INFO is a plist of contextual information."
-  (concat "  \n" contents))
 
 (defun ox-jupyter--link (link contents _info)
   "Transcode a LINK element from Org to Jupyter notebook JSON.
