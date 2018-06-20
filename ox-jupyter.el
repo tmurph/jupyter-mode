@@ -636,11 +636,48 @@ CONTENTS is the text to be emphasized.  INFO is a plist of
 contextual information."
   (format "~~%s~~" contents))
 
+(defun ox-jupyter--toc-headline-list-item (info headline)
+  "Return a bulleted list item containing a link to HEADLINE.
+
+INFO is a plist used as a communication channel."
+  (let* ((raw-value (org-element-property :raw-value headline))
+         (indent (1- (org-export-get-relative-level headline info))))
+    (concat
+     (make-string indent ? )
+     "- "
+     (format "[%s](#%s)" raw-value raw-value))))
+
+(defun ox-jupyter--toc-text (info &optional depth)
+  "Build a TOC, as a bulleted list of links to headlines.
+
+INFO is a plist used as a communication channel.
+
+Optional argument DEPTH, when non-nil, is an integer specifying
+the depth of the table."
+  (mapconcat (apply-partially #'ox-jupyter--toc-headline-list-item info)
+             (org-export-collect-headlines info depth)
+             "\n"))
+
+(defun ox-jupyter--toc (info &optional depth)
+  "Build a TOC alist suitable for parsing to JSON.
+
+INFO is a plist used as a communication channel.
+
+Optional argument DEPTH, when non-nil, is an integer specifying
+the depth of the table."
+  (let* ((toc-text (ox-jupyter--toc-text info depth))
+         (toc-markdown-text (ox-jupyter--split-string toc-text))
+         (toc-markdown-alist (apply #'ox-jupyter--markdown-alist
+                                    toc-markdown-text)))
+    (list toc-markdown-alist)))
+
 (defun ox-jupyter--template (contents info)
   "Add preamble and postamble to transcoded document CONTENTS.
 
 INFO is a plist of export options."
-  (let* ((cell-list (json-read-from-string contents))
+  (let* ((toc-depth (plist-get info :with-toc))
+         (toc-list (and toc-depth (ox-jupyter--toc info toc-depth)))
+         (cell-list (vconcat toc-list (json-read-from-string contents)))
          (metadata (plist-get info :jupyter-metadata))
          (metadata (ignore-errors (and metadata (read metadata))))
          (version-pair (split-string ox-jupyter--nbformat "\\."))

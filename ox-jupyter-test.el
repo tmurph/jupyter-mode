@@ -551,6 +551,39 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  \"metadata\": \"something\","
      "  \"nbformat\": 4,"
      "  \"nbformat_minor\": 0"
+     "},"))
+   ((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example\""
+     "  }"
+     "]")
+    '(:with-toc 3
+                :headline-levels 3
+                :parse-tree
+                (org-data nil
+                          (headline
+                           (:level 1 :raw-value "link to me"))))
+    "4.0"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"markdown\","
+     "      \"metadata\": {"
+     "      },"
+     "      \"source\": ["
+     "        \"- [link to me](#link to me)\""
+     "      ]"
+     "    },"
+     "    {"
+     "      \"cell_type\": \"example\""
+     "    }"
+     "  ],"
+     "  \"metadata\": {"
+     "  },"
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
      "},")))
   (let ((ox-jupyter--nbformat version))
     (should (equal (ox-jupyter--template contents info)
