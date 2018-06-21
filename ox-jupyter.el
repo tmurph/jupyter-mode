@@ -88,7 +88,8 @@
                    (:filter-src-block . ox-jupyter--normalize-string))
   :options-alist '((:with-sub-superscript nil "^" nil)
                    (:jupyter-metadata "METADATA" nil
-                                      org-export-jupyter-metadata space)))
+                                      org-export-jupyter-metadata space)
+                   (:jupyter-session "SESSION" nil nil)))
 
 ;;; Constants
 
@@ -686,19 +687,58 @@ the depth of the table."
   (list (apply #'ox-jupyter--markdown-alist
                (ox-jupyter--split-string (format "# %s\n-----" title)))))
 
+(defun ox-jupyter--kernelspec-alist (kernel)
+  "Return kernelspec info related to the active KERNEL."
+  (let* ((kernelspec (jupyter-struct-kernelspec kernel))
+         (spec (->> (shell-command-to-string
+                     "jupyter kernelspec list --json")
+                    (json-read-from-string)
+                    (alist-get 'kernelspecs)
+                    (alist-get (intern kernelspec))
+                    (alist-get 'spec))))
+    (list (delq nil `(kernelspec
+                      (name . ,kernelspec)
+                      ,(assq 'display_name spec)
+                      ,(assq 'language spec))))))
+
+(defun ox-jupyter--language-info-alist (kernel)
+  "Return language info related to the active KERNEL."
+  (deferred:sync!
+    (deferred:$
+      (jupyter--kernel-info-deferred kernel)
+      (deferred:nextc it #'jupyter--shell-content-from-alist)
+      (deferred:nextc it
+        (lambda (content-alist) (assq 'language_info content-alist)))
+      (deferred:nextc it
+        (lambda (info) (and info (list info)))))))
+
 (defun ox-jupyter--template (contents info)
   "Add preamble and postamble to transcoded document CONTENTS.
 
 INFO is a plist of export options."
-  (let* ((title-p (plist-get info :with-title))
+  (let* ((title-p (and (plist-get info :with-title)
+                       (plist-get info :title)))
          (title-list (and title-p (ox-jupyter--title
                                    (car (plist-get info :title)))))
          (toc-depth (plist-get info :with-toc))
          (toc-list (and toc-depth (ox-jupyter--toc info toc-depth)))
          (cell-list (vconcat title-list toc-list
                              (json-read-from-string contents)))
+         (session (plist-get info :jupyter-session))
+         (kernel (cdr (assoc session jupyter--session-kernels-alist)))
+         (kernelspec-alist (and kernel
+                                (ox-jupyter--kernelspec-alist kernel)))
+         (language-info-alist (and kernel
+                                   (ox-jupyter--language-info-alist
+                                    kernel)))
          (metadata (plist-get info :jupyter-metadata))
          (metadata (ignore-errors (and metadata (read metadata))))
+         (metadata (if (or (null metadata)
+                           (car-safe (car-safe metadata)))
+                       metadata
+                     (list (list metadata))))
+         (metadata (append metadata kernelspec-alist
+                           language-info-alist))
          (version-pair (split-string ox-jupyter--nbformat "\\."))
          (major-version (string-to-number (car version-pair)))
          (minor-version (string-to-number (cadr version-pair)))

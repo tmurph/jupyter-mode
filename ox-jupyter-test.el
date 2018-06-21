@@ -512,7 +512,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                  expected-text)))
 
 (ert-deftest-parametrize ox-jupyter-template
-  (contents info version expected-text)
+  (contents info expected-text)
   (((ox-jupyter--concat-multiline
      "["
      "  {"
@@ -522,7 +522,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"cell_type\": \"example2\""
      "  }"
      "]")
-    '(:jupyter-metadata "") "4.0"
+    '(:jupyter-metadata "")
     (ox-jupyter--concat-multiline
      "{"
      "  \"cells\": ["
@@ -544,7 +544,7 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "    \"cell_type\": \"example\""
      "  }"
      "]")
-    '(:jupyter-metadata "something") "4.0"
+    '(:jupyter-metadata "something")
     (ox-jupyter--concat-multiline
      "{"
      "  \"cells\": ["
@@ -552,7 +552,9 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "      \"cell_type\": \"example\""
      "    }"
      "  ],"
-     "  \"metadata\": \"something\","
+     "  \"metadata\": {"
+     "    \"something\": null"
+     "  },"
      "  \"nbformat\": 4,"
      "  \"nbformat_minor\": 0"
      "},"))
@@ -568,7 +570,6 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
                 (org-data nil
                           (headline
                            (:level 1 :raw-value "link to me"))))
-    "4.0"
     (ox-jupyter--concat-multiline
      "{"
      "  \"cells\": ["
@@ -596,7 +597,6 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  }"
      "]")
     '(:with-title t :title ("Title"))
-    "4.0"
     (ox-jupyter--concat-multiline
      "{"
      "  \"cells\": ["
@@ -618,9 +618,188 @@ Bind PARAMS to sequential elements from VALUES and execute test BODY."
      "  \"nbformat\": 4,"
      "  \"nbformat_minor\": 0"
      "},")))
-  (let ((ox-jupyter--nbformat version))
-    (should (equal (ox-jupyter--template contents info)
-                   expected-text))))
+  (let ((ox-jupyter--nbformat "4.0"))
+    (should (equal (ox-jupyter--template contents info) expected-text))))
+
+(ert-deftest-parametrize ox-jupyter-kernelspec-alist
+  (kernelspec shell-command-result expected-alist)
+  (("test"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"kernelspecs\": {"
+     "    \"test\": {"                  ; this has gotta match the kspec
+     "      \"spec\": {"
+     "        \"language\": \"python\""
+     "        }"
+     "      }"
+     "    }"
+     "  }"
+     "}")
+    '((kernelspec (name . "test") (language . "python"))))
+   ("test"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"kernelspecs\": {"
+     "    \"test\": {"                  ; this has gotta match the kspec
+     "      \"spec\": {"
+     "        \"display_name\": \"name\","
+     "        \"language\": \"python\""
+     "        }"
+     "      }"
+     "    }"
+     "  }"
+     "}")
+    '((kernelspec (name . "test") (display_name . "name")
+                  (language . "python"))))
+   ("test"
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"kernelspecs\": {"
+     "    \"test\": {"                  ; this has gotta match the kspec
+     "      \"resource_dir\": \"\","
+     "      \"spec\": {"
+     "        \"argv\": ["
+     "          \"python3\","
+     "          \"-m\","
+     "          \"ipykernel_launcher\","
+     "          \"-f\","
+     "          \"{connection_file}\""
+     "        ],"
+     "        \"env\": {"
+     "        },"
+     "        \"display_name\": \"name\","
+     "        \"language\": \"python\","
+     "        \"interrupt_mode\": \"signal\","
+     "        \"metadata\": {"
+     "        }"
+     "      }"
+     "    }"
+     "  }"
+     "}")
+    '((kernelspec (name . "test") (display_name . "name")
+                  (language . "python")))))
+  (cl-letf ((kernel (jupyter-struct--create :kernelspec kernelspec))
+            ((symbol-function 'shell-command-to-string)
+             (lambda (_command_string) shell-command-result)))
+    (should (equal (ox-jupyter--kernelspec-alist kernel)
+                   expected-alist))))
+
+(ert-deftest-parametrize ox-jupyter-language-info-alist
+  (kernel-info-alist expected-alist)
+  (('((iopub)
+      (shell
+       ((header)
+        (parent_header)
+        (metadata)
+        (content
+         (status . "ok")))))
+    nil)
+   ('((iopub)
+      (shell
+       ((header)
+        (parent_header)
+        (metadata)
+        (content
+         (status . "ok")
+         (language_info
+          (name . "python"))))))
+    '((language_info
+       (name . "python")))))
+  (cl-letf (((symbol-function 'jupyter--kernel-info-deferred)
+             (lambda (_ignore)
+               (deferred:next (lambda () kernel-info-alist)))))
+    (should (equal (ox-jupyter--language-info-alist 'ignore)
+                   expected-alist))))
+
+(ert-deftest-parametrize ox-jupyter-template-with-session
+  (contents info kernelspec-alist language-info-alist expected-text)
+  (((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example\""
+     "  }"
+     "]")
+    '(:jupyter-session "test")
+    nil '((language_info (name . "python")))
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"example\""
+     "    }"
+     "  ],"
+     "  \"metadata\": {"
+     "    \"language_info\": {"
+     "      \"name\": \"python\""
+     "    }"
+     "  },"
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
+     "},"))
+   ((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example\""
+     "  }"
+     "]")
+    '(:jupyter-session "test")
+    '((kernelspec (name . "spec") (display_name . "name"))) nil
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"example\""
+     "    }"
+     "  ],"
+     "  \"metadata\": {"
+     "    \"kernelspec\": {"
+     "      \"name\": \"spec\","
+     "      \"display_name\": \"name\""
+     "    }"
+     "  },"
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
+     "},"))
+   ((ox-jupyter--concat-multiline
+     "["
+     "  {"
+     "    \"cell_type\": \"example\""
+     "  }"
+     "]")
+    '(:jupyter-session "test"
+                       :jupyter-metadata "((some (alist . stuff)))")
+    '((kernelspec (name . "spec") (display_name . "name")))
+    '((language_info (name . "python")))
+    (ox-jupyter--concat-multiline
+     "{"
+     "  \"cells\": ["
+     "    {"
+     "      \"cell_type\": \"example\""
+     "    }"
+     "  ],"
+     "  \"metadata\": {"
+     "    \"some\": {"
+     "      \"alist\": \"stuff\""
+     "    },"
+     "    \"kernelspec\": {"
+     "      \"name\": \"spec\","
+     "      \"display_name\": \"name\""
+     "    },"
+     "    \"language_info\": {"
+     "      \"name\": \"python\""
+     "    }"
+     "  },"
+     "  \"nbformat\": 4,"
+     "  \"nbformat_minor\": 0"
+     "},")))
+  (cl-letf ((ox-jupyter--nbformat "4.0")
+            (jupyter--session-kernels-alist
+             `((,(plist-get info :jupyter-session) . mock)))
+            ((symbol-function 'ox-jupyter--kernelspec-alist)
+             (lambda (_kernel) kernelspec-alist))
+            ((symbol-function 'ox-jupyter--language-info-alist)
+             (lambda (_kernel) language-info-alist)))
+    (should (equal (ox-jupyter--template contents info) expected-text))))
 
 ;; Structure functions
 

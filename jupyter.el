@@ -427,7 +427,7 @@ Returns a list of the various parts."
                (:copier jupyter-struct--copy))
   "Jupyter kernel management object.
 
-`jupyter-struct-name' The name used to identify this struct.
+`jupyter-struct-kernelspec' The name of the launched kernel.
 
 `jupyter-struct-process' The Jupyter process started by Emacs.
 
@@ -458,7 +458,7 @@ Jupyter Shell port.
 
 `jupyter-struct-key' The HMAC-SHA256 key used to authenticate
 to the Jupyter server."
-  (name nil :read-only t)
+  (kernelspec nil :read-only t)
   (process nil :read-only t)
   (buffer nil :read-only t)
   (conn-file-name nil :read-only t)
@@ -561,7 +561,7 @@ Returns a `jupyter-struct'."
                                   (alist-get 'ip json)
                                   (alist-get 'shell_port json))))
       (zmq--connect shell s))
-    (jupyter-struct--create :name name
+    (jupyter-struct--create :kernelspec kernelspec
                             :process (get-buffer-process proc-buf)
                             :buffer proc-buf
                             :conn-file-name full-file
