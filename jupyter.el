@@ -1335,11 +1335,11 @@ are provided, pass them to `jupyter--initialize-kernel'."
                                                 "json\\'")
                                nil t))
             ssh-server (or ssh-server
-                           (read-from-minibuffer "(Optional) SSH to a server? "))
+                           (read-from-minibuffer "(Optional) SSH server? "))
             cmd-args (or cmd-args
-                         (read-from-minibuffer "(Optional) Add Jupyter command args? "))
+                         (read-from-minibuffer "(Optional) Additional Jupyter command args? "))
             kernel-args (or kernel-args
-                            (read-from-minibuffer "(Optional) Add kernel args? "))
+                            (read-from-minibuffer "(Optional) Additional kernel args? "))
             kernel-cons (apply #'jupyter--acquire-session
                                session
                                (mapcar #'jupyter--null-from-empty-string
